@@ -1,5 +1,5 @@
 /* ============================================================
- * Bullseye — a Qlik Sense visualization extension (plain, Qlik-native styling)
+ * BFT — a Qlik Sense visualization extension (the vintage, badge-styled ring chart)
  *
  * A part-to-whole chart drawn as concentric rings, one ring per
  * dimension (dimension 1 innermost, like the layers of a target).
@@ -19,9 +19,9 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   "use strict";
 
   /* ---------- one-time style injection ---------- */
-  if (!document.getElementById("be-style")) {
+  if (!document.getElementById("bft-style")) {
     var styleTag = document.createElement("style");
-    styleTag.id = "be-style";
+    styleTag.id = "bft-style";
     styleTag.textContent = css;
     document.head.appendChild(styleTag);
   }
@@ -31,43 +31,59 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   var NULL_KEY = "__null__";
 
   /* ================= palettes =================
-   * Qlik Sense's standard "12 colours" first; a colour-blind-safe set and a
-   * softer set as alternatives.
+   * Vintage, screen-printed feel: warm paper, dark ink, a few saturated
+   * but muted inks per palette.
    */
   var PALETTES = {
-    qlik12: {
-      colors: ["#332288", "#6699CC", "#88CCEE", "#44AA99", "#117733", "#999933",
-        "#DDCC77", "#661100", "#CC6677", "#AA4466", "#882255", "#AA4499"]
+    campfire: {
+      colors: ["#D9713A", "#2D5A62", "#E2B34C", "#973A2B", "#4E7A5A",
+        "#2A3550", "#C79A6B", "#6E8FA0", "#B24F3E", "#7C8C55"],
+      paper: "#F2E8D5", ink: "#2B2119"
     },
-    safe: {
-      colors: ["#4477AA", "#EE6677", "#228833", "#CCBB44", "#66CCEE", "#AA3377", "#BBBBBB"]
+    tidewater: {
+      colors: ["#1E4B5A", "#4A8B98", "#D9A441", "#8FB0A9", "#8A5A3C",
+        "#2F6B5E", "#C8B58F", "#D27C3B", "#37475A", "#7DA286"],
+      paper: "#EFE9DA", ink: "#1F2A30"
     },
-    soft: {
-      colors: ["#4C78A8", "#F58518", "#54A24B", "#E45756", "#72B7B2", "#EECA3B",
-        "#B279A2", "#FF9DA6", "#9D755D", "#BAB0AC"]
+    sunbaked: {
+      colors: ["#C24A2C", "#E1A33B", "#7A8C69", "#3E5A72", "#8E3F34",
+        "#D68B5B", "#B5A47A", "#4A5F5B", "#E6C89D", "#6B4A3A"],
+      paper: "#F4E9D3", ink: "#33271F"
+    },
+    pine: {
+      colors: ["#24493A", "#D66B3A", "#E9BD58", "#5F7D6C", "#A34936",
+        "#1E2E39", "#BFB496", "#7C9F80", "#E0975A", "#3A5856"],
+      paper: "#EFE8D6", ink: "#1B2A24"
+    },
+    park: {
+      colors: ["#3A6A4C", "#D18B33", "#B3402A", "#2E4756", "#8B6E49",
+        "#699182", "#DEAA68", "#4B6C8C", "#A2623D", "#E5D4A6"],
+      paper: "#F1E6CD", ink: "#2A2A22"
     }
   };
-  var INK = "#404040";      /* Qlik Sense body text */
-  var MUTED = "#595959";
-  var WHITE = "#FFFFFF";
 
   var DEFAULTS = {
     mode: "drilldown",
     drillSelect: "path",
     segmentOrder: "value",
     reverseRings: false,
-    hole: 0.35,
-    ringGap: 2,
-    segmentGap: 1,
+    hole: 0.3,
+    ringGap: 3,
+    segmentGap: 2,
     showLabels: true,
     labelContent: "name",
     showCenter: true,
     centerLabel: "",
     numberFormat: "compact",
     showLegend: true,
-    palette: "qlik12",
+    palette: "campfire",
     customColors: "",
-    shading: "tint"
+    shading: "tint",
+    paper: true,
+    grain: true,
+    frame: true,
+    paperColor: "",
+    inkColor: ""
   };
 
   /* ================= small utilities ================= */
@@ -158,14 +174,15 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     return o;
   }
   function resolveTheme(o) {
-    var base = PALETTES[o.palette] || PALETTES.qlik12;
+    var base = PALETTES[o.palette] || PALETTES.campfire;
     var colors = base.colors;
     if (o.palette === "custom") {
       var c = parseColorList(o.customColors);
       if (c.length) colors = c;
     }
-    /* paper = the colour between segments, tint = what outer rings lighten toward */
-    return { colors: colors, paper: WHITE, ink: INK, muted: MUTED, tint: WHITE };
+    var paper = hexToRgb(o.paperColor) ? o.paperColor : base.paper;
+    var ink = hexToRgb(o.inkColor) ? o.inkColor : base.ink;
+    return { colors: colors, paper: paper, ink: ink, tint: mix(paper, "#FFFFFF", 0.55) };
   }
 
   /* ================= data fetching (page through the cube) ================= */
@@ -345,7 +362,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   }
 
   function computeGeometry(W, H, nDims, o) {
-    var pad = 6;
+    var pad = o.frame ? 14 : 6;
     var R = Math.max(10, Math.min(W, H) / 2 - pad);
     var hole = R * o.hole;
     if (o.showCenter && hole < 22 && R > 80) hole = 22;
@@ -423,7 +440,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var rot = horizontal ? 0 : ((deg > 90 && deg < 270) ? deg + 180 : deg);
     var fill = luminance(n.color) > 0.3 ? theme.ink : theme.tint;
     var x = f2(geom.cx + rMid * Math.sin(am)), y = f2(geom.cy - rMid * Math.cos(am));
-    var s = '<text class="be-label" transform="translate(' + x + ',' + y + ') rotate(' + f2(rot) + ')"' +
+    var s = '<text class="by-label" transform="translate(' + x + ',' + y + ') rotate(' + f2(rot) + ')"' +
       ' text-anchor="middle" font-size="' + f2(fs) + '" fill="' + fill + '">';
     if (second) {
       s += '<tspan x="0" dy="-0.5em">' + esc(text) + '</tspan>' +
@@ -438,33 +455,50 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var model = st.model, o = st.opts, theme = st.theme;
     var s = [];
     var cx = f2(geom.cx), cy = f2(geom.cy);
-    s.push('<g class="be-segs" fill-rule="evenodd">');
+    if (o.paper) s.push('<rect class="by-paper" x="0" y="0" width="' + W + '" height="' + H + '" fill="' + theme.paper + '"/>');
+    if (o.frame) {
+      s.push('<g class="by-frame" fill="none" stroke="' + theme.ink + '">' +
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + f2(geom.R + 4) + '" stroke-width="1.2" opacity="0.85"/>' +
+        '<circle cx="' + cx + '" cy="' + cy + '" r="' + f2(geom.R + 9) + '" stroke-width="0.7" stroke-dasharray="1.5 3" opacity="0.75"/>' +
+        '</g>');
+    }
+    s.push('<g class="by-segs" fill-rule="evenodd">');
     model.nodes.forEach(function (n) {
       if (!(n.a1 > n.a0)) return;
       var d = arcPath(geom.cx, geom.cy, n.r0, n.r1, n.a0, n.a1);
       if (!d) return;
-      s.push('<path class="be-seg' + (n.selectable ? "" : " be-nosel") + '" data-id="' + n.id + '" d="' + d +
+      s.push('<path class="by-seg' + (n.selectable ? "" : " by-nosel") + '" data-id="' + n.id + '" d="' + d +
         '" fill="' + n.color + '" stroke="' + theme.paper + '" stroke-width="' + o.segmentGap +
         '" stroke-linejoin="round"/>');
     });
     s.push("</g>");
     if (o.showLabels) {
-      s.push('<g class="be-labels">');
+      s.push('<g class="by-labels">');
       model.nodes.forEach(function (n) { s.push(labelSvg(n, model, o, theme, geom)); });
       s.push("</g>");
     }
-    s.push('<g class="be-selg" fill="none" stroke="' + theme.ink + '" stroke-width="1.5" stroke-linejoin="round"></g>');
+    s.push('<g class="by-selg" fill="none" stroke="' + theme.ink + '" stroke-width="2.4" stroke-linejoin="round"></g>');
     if (o.showCenter) {
       var r = geom.hole - Math.max(geom.gap, 2) - 1;
       if (r >= 16) {
         st.centerR = r;
-        s.push('<g class="be-center">' +
-          '<text class="be-c-label" x="' + cx + '" y="' + f2(geom.cy - r * 0.30) + '" text-anchor="middle" fill="' + theme.muted + '"></text>' +
-          '<text class="be-c-value" x="' + cx + '" y="' + f2(geom.cy + r * 0.12) + '" text-anchor="middle" fill="' + theme.ink + '"></text>' +
-          '<text class="be-c-sub" x="' + cx + '" y="' + f2(geom.cy + r * 0.44) + '" text-anchor="middle" fill="' + theme.muted + '"></text>' +
+        s.push('<g class="by-center">' +
+          '<circle cx="' + cx + '" cy="' + cy + '" r="' + f2(r) + '" fill="' + theme.paper + '" stroke="' + theme.ink + '" stroke-width="1.4"/>' +
+          (r > 30 ? '<circle cx="' + cx + '" cy="' + cy + '" r="' + f2(r - 5) + '" fill="none" stroke="' + theme.ink + '" stroke-width="0.7" stroke-dasharray="1.5 3" opacity="0.8"/>' : "") +
+          '<text class="by-c-label" x="' + cx + '" y="' + f2(geom.cy - r * 0.32) + '" text-anchor="middle" fill="' + theme.ink + '"></text>' +
+          '<text class="by-c-value" x="' + cx + '" y="' + f2(geom.cy + r * 0.12) + '" text-anchor="middle" fill="' + theme.ink + '"></text>' +
+          '<text class="by-c-sub" x="' + cx + '" y="' + f2(geom.cy + r * 0.46) + '" text-anchor="middle" fill="' + theme.ink + '" opacity="0.75"></text>' +
           "</g>");
       } else st.centerR = 0;
     } else st.centerR = 0;
+    if (o.grain) {
+      var fid = "by-grain-" + st.id;
+      s.push('<defs><filter id="' + fid + '" x="0" y="0" width="100%" height="100%">' +
+        '<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="n"/>' +
+        '<feColorMatrix type="saturate" values="0"/>' +
+        '</filter></defs>' +
+        '<rect class="by-grain" x="0" y="0" width="' + W + '" height="' + H + '" filter="url(#' + fid + ')" opacity="0.09" style="mix-blend-mode:multiply"/>');
+    }
     return s.join("");
   }
 
@@ -478,13 +512,13 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       return { ring: o.reverseRings ? m.nDims - i : i + 1, title: t };
     }).sort(function (a, b) { return a.ring - b.ring; });
     if (m.nDims > 1 || m.mode !== "drilldown") {
-      h.push('<div class="be-ringkey">' + key.map(function (k) {
-        return '<span class="be-rk"><b>' + k.ring + "</b>" + esc(k.title) + "</span>";
+      h.push('<div class="by-ringkey">' + key.map(function (k) {
+        return '<span class="by-rk"><b>' + k.ring + "</b>" + esc(k.title) + "</span>";
       }).join("") + "</div>");
     }
     if (m.mode === "drilldown") {
-      h.push('<div class="be-chips">' + m.root.children.slice(0, 40).map(function (c) {
-        return '<span class="be-chip" data-id="' + c.id + '"><i class="be-sw" style="background:' + c.color + '"></i>' + esc(c.name) + "</span>";
+      h.push('<div class="by-chips">' + m.root.children.slice(0, 40).map(function (c) {
+        return '<span class="by-chip" data-id="' + c.id + '"><i class="by-sw" style="background:' + c.color + '"></i>' + esc(c.name) + "</span>";
       }).join("") + "</div>");
     }
     L.innerHTML = h.join("");
@@ -494,17 +528,17 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   function applySelectionClasses(st) {
     var m = st.model, selDims = {}, sel = [];
     m.nodes.forEach(function (n) { if (n.state === "S") selDims[n.dim] = true; });
-    var segs = st.svg.querySelectorAll(".be-seg");
+    var segs = st.svg.querySelectorAll(".by-seg");
     st.segEls = {};
     for (var i = 0; i < segs.length; i++) {
       var el = segs[i], n = m.byId[el.getAttribute("data-id")];
       if (!n) continue;
       st.segEls[n.id] = el;
       var faded = n.state === "X" || (selDims[n.dim] && n.state !== "S");
-      el.classList.toggle("be-faded", !!faded);
+      el.classList.toggle("by-faded", !!faded);
       if (n.state === "S") sel.push('<path d="' + el.getAttribute("d") + '"/>');
     }
-    var g = st.svg.querySelector(".be-selg");
+    var g = st.svg.querySelector(".by-selg");
     if (g) g.innerHTML = sel.join("");
   }
 
@@ -513,7 +547,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var r = st.centerR;
     if (!r) return;
     var svg = st.svg, m = st.model, o = st.opts;
-    var lab = svg.querySelector(".be-c-label"), val = svg.querySelector(".be-c-value"), sub = svg.querySelector(".be-c-sub");
+    var lab = svg.querySelector(".by-c-label"), val = svg.querySelector(".by-c-value"), sub = svg.querySelector(".by-c-sub");
     if (!lab || !val || !sub) return;
     var label = node ? node.name : (o.centerLabel || m.measureTitle || "");
     var value = fmtNumber(node ? node.value : m.total, o.numberFormat, m.decimals);
@@ -550,6 +584,8 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       h.push('<div class="t-row"><span>of ' + esc(fitText(node.parent.name, 120, 12)) + "</span><span>" + fmtPct(node.value / node.parent.value) + "</span></div>");
     }
     tip.innerHTML = h.join("");
+    tip.style.background = theme.paper;
+    tip.style.color = theme.ink;
     tip.style.display = "block";
     moveTip(st, evt);
   }
@@ -573,17 +609,17 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     st.hover = node;
     var id;
     if (!node) {
-      svg.classList.remove("be-hovering");
-      for (id in st.segEls) st.segEls[id].classList.remove("be-lit");
+      svg.classList.remove("by-hovering");
+      for (id in st.segEls) st.segEls[id].classList.remove("by-lit");
       hideTip(st);
       updateCenter(st, null);
       return;
     }
-    svg.classList.add("be-hovering");
+    svg.classList.add("by-hovering");
     var lit = {}, a = node;
     while (a && a.depth > 0) { lit[a.id] = true; a = a.parent; }
     (function rec(n) { n.children.forEach(function (c) { lit[c.id] = true; rec(c); }); })(node);
-    for (id in st.segEls) st.segEls[id].classList.toggle("be-lit", !!lit[id]);
+    for (id in st.segEls) st.segEls[id].classList.toggle("by-lit", !!lit[id]);
     updateCenter(st, node);
     showTip(st, node, evt);
   }
@@ -626,7 +662,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       }
     }
     calls.reduce(function (p, fn) { return p.then(fn); }, Promise.resolve())
-      .catch(function (e) { if (window.console) console.warn("Bullseye: selection failed", e); });
+      .catch(function (e) { if (window.console) console.warn("BFT: selection failed", e); });
   }
 
   /* ================= DOM & events ================= */
@@ -667,29 +703,29 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
 
   function ensureDom(el, st) {
     var root = el.firstElementChild;
-    if (!root || !root.classList.contains("be-root")) {
-      el.innerHTML = '<div class="be-root">' +
-        '<svg class="be-svg" xmlns="http://www.w3.org/2000/svg"></svg>' +
-        '<div class="be-legend"></div>' +
-        '<div class="be-note" style="display:none"></div>' +
-        '<div class="be-tip" style="display:none"></div>' +
-        '<div class="be-empty" style="display:none"></div>' +
+    if (!root || !root.classList.contains("by-root")) {
+      el.innerHTML = '<div class="by-root">' +
+        '<svg class="by-svg" xmlns="http://www.w3.org/2000/svg"></svg>' +
+        '<div class="by-legend"></div>' +
+        '<div class="by-note" style="display:none"></div>' +
+        '<div class="by-tip" style="display:none"></div>' +
+        '<div class="by-empty" style="display:none"></div>' +
         "</div>";
       root = el.firstElementChild;
       st.root = root;
-      st.svg = root.querySelector(".be-svg");
-      st.legendEl = root.querySelector(".be-legend");
-      st.noteEl = root.querySelector(".be-note");
-      st.tip = root.querySelector(".be-tip");
-      st.emptyEl = root.querySelector(".be-empty");
+      st.svg = root.querySelector(".by-svg");
+      st.legendEl = root.querySelector(".by-legend");
+      st.noteEl = root.querySelector(".by-note");
+      st.tip = root.querySelector(".by-tip");
+      st.emptyEl = root.querySelector(".by-empty");
       bindEvents(st);
     } else {
       st.root = root;
-      st.svg = root.querySelector(".be-svg");
-      st.legendEl = root.querySelector(".be-legend");
-      st.noteEl = root.querySelector(".be-note");
-      st.tip = root.querySelector(".be-tip");
-      st.emptyEl = root.querySelector(".be-empty");
+      st.svg = root.querySelector(".by-svg");
+      st.legendEl = root.querySelector(".by-legend");
+      st.noteEl = root.querySelector(".by-note");
+      st.tip = root.querySelector(".by-tip");
+      st.emptyEl = root.querySelector(".by-empty");
     }
     return root;
   }
@@ -722,6 +758,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var hc = layout.qHyperCube || {};
     ensureDom(el, st);
     st.self = self; st.opts = o; st.theme = theme; st.layout = layout; st.hover = null;
+    st.root.style.background = o.paper ? theme.paper : "transparent";
     st.root.style.color = theme.ink;
 
     var nDims = (hc.qDimensionInfo || []).length, nMeas = (hc.qMeasureInfo || []).length;
@@ -745,7 +782,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     st.svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     st.svg.setAttribute("width", W);
     st.svg.setAttribute("height", H);
-    st.svg.classList.remove("be-hovering");
+    st.svg.classList.remove("by-hovering");
     st.svg.innerHTML = buildSvg(st, W, H, geom);
     hideTip(st);
     applySelectionClasses(st);
@@ -775,10 +812,10 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       return fetchAll(self, layout).then(function (rows) {
         render(self, el, layout, rows);
       }).catch(function (e) {
-        if (window.console) console.error("Bullseye:", e);
+        if (window.console) console.error("BFT:", e);
         var st = getState((layout.qInfo && layout.qInfo.qId) || "x");
         ensureDom(el, st);
-        showEmpty(st, "Bullseye could not render: " + (e && e.message ? e.message : e));
+        showEmpty(st, "BFT could not render: " + (e && e.message ? e.message : e));
       });
     }
   };

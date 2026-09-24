@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Bullseye — dev preview</title>
-<link rel="stylesheet" href="../bullseye/style.css">
+<title>BFT — dev preview</title>
+<link rel="stylesheet" href="../bft/style.css">
 <style>
-  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #eef0f4; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #d9d4c7; }
   .bar { display:flex; gap:14px; align-items:center; padding:10px 18px; font-size:13px; background:#2b2119; color:#f2e8d5; flex-wrap:wrap }
   .bar label { display:flex; gap:6px; align-items:center }
   .bar select, .bar input { font: inherit }
@@ -19,10 +19,12 @@
 <div class="bar">
   <label>Mode <select id="mode"><option value="drilldown">drilldown</option><option value="independent">independent</option></select></label>
   <label>Click <select id="drillSelect"><option value="path">path</option><option value="additive">additive</option></select></label>
-  <label>Palette <select id="palette"><option>qlik12</option><option>safe</option><option>soft</option></select></label>
+  <label>Palette <select id="palette"><option>campfire</option><option>tidewater</option><option>sunbaked</option><option>pine</option><option>park</option></select></label>
   <label>Dims <select id="ndims"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></label>
   <label>Labels <select id="labelContent"><option value="name">name</option><option value="pct">pct</option><option value="value">value</option></select></label>
   <label>Centre <input id="hole" type="range" min="0" max="0.7" step="0.05" value="0.3"></label>
+  <label><input id="grain" type="checkbox" checked> grain</label>
+  <label><input id="paper" type="checkbox" checked> paper</label>
   <label><input id="legend" type="checkbox" checked> legend</label>
   <button id="clear">Clear selections</button>
 </div>
@@ -129,11 +131,11 @@
   }
 
   var ctl = {};
-  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
+  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "grain", "paper", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
   function opts() {
     return { mode: ctl.mode.value, drillSelect: ctl.drillSelect.value, palette: ctl.palette.value,
-      labelContent: ctl.labelContent.value, hole: +ctl.hole.value,
-      showLegend: ctl.legend.checked };
+      labelContent: ctl.labelContent.value, hole: +ctl.hole.value, grain: ctl.grain.checked,
+      paper: ctl.paper.checked, showLegend: ctl.legend.checked };
   }
   function log(s) { var l = document.getElementById("log"); l.textContent = (s + "\n" + l.textContent).slice(0, 4000); }
 
@@ -158,8 +160,8 @@
   window.addEventListener("resize", repaint);
   window.__sel = function () { return selected; };
 
-  loadModule("./properties", "../bullseye/properties.js")
-    .then(function () { return loadModule("./bullseye", "../bullseye/bullseye.js"); })
+  loadModule("./properties", "../bft/properties.js")
+    .then(function () { return loadModule("./bft", "../bft/bft.js"); })
     .then(function (m) { ext = m; window.__ext = ext; repaint(); })
     .catch(function (e) { log("load error: " + e); });
 </script>

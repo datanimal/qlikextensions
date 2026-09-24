@@ -165,7 +165,7 @@ define([], function () {
 
       colors: {
         type: "items",
-        label: "Colours",
+        label: "Colours & style",
         items: {
           palette: {
             ref: "props.palette",
@@ -173,19 +173,21 @@ define([], function () {
             type: "string",
             component: "dropdown",
             options: [
-              { value: "qlik12", label: "12 colours (Qlik default)" },
-              { value: "safe", label: "Colour-blind safe" },
-              { value: "soft", label: "Soft" },
+              { value: "campfire", label: "Campfire" },
+              { value: "tidewater", label: "Tidewater" },
+              { value: "sunbaked", label: "Sunbaked" },
+              { value: "pine", label: "Pine & Ember" },
+              { value: "park", label: "National Park" },
               { value: "custom", label: "Custom" }
             ],
-            defaultValue: "qlik12"
+            defaultValue: "campfire"
           },
           customColors: {
             ref: "props.customColors",
             label: "Custom colours (hex, comma separated)",
             type: "string",
             expression: "optional",
-            defaultValue: "#332288, #6699CC, #88CCEE, #44AA99, #117733, #999933",
+            defaultValue: "#D9713A, #2D5A62, #E2B34C, #973A2B, #4E7A5A, #2A3550",
             show: isCustom
           },
           shading: {
@@ -198,6 +200,38 @@ define([], function () {
               { value: "flat", label: "Flat colours" }
             ],
             defaultValue: "tint"
+          },
+          paper: {
+            ref: "props.paper",
+            label: "Paper background",
+            type: "boolean",
+            defaultValue: true
+          },
+          grain: {
+            ref: "props.grain",
+            label: "Print grain",
+            type: "boolean",
+            defaultValue: true
+          },
+          frame: {
+            ref: "props.frame",
+            label: "Badge frame",
+            type: "boolean",
+            defaultValue: true
+          },
+          paperColor: {
+            ref: "props.paperColor",
+            label: "Paper colour (hex, blank = palette default)",
+            type: "string",
+            expression: "optional",
+            defaultValue: ""
+          },
+          inkColor: {
+            ref: "props.inkColor",
+            label: "Ink colour (hex, blank = palette default)",
+            type: "string",
+            expression: "optional",
+            defaultValue: ""
           }
         }
       },

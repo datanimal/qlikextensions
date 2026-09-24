@@ -1,6 +1,6 @@
 {
-  "name": "Bullseye Rings",
-  "description": "A part-to-whole ring chart. One dimension gives you a donut; several give you concentric rings, like the layers of a target. Run the rings as a hierarchy (selecting an outer segment selects its whole path) or as independent layers. Vintage, badge-inspired palettes.",
+  "name": "Bullseye",
+  "description": "A part-to-whole ring chart in Qlik's standard look. One dimension gives a donut; several give concentric rings. Run the rings as a hierarchy (selecting an outer segment selects its whole path) or as independent layers.",
   "type": "visualization",
   "version": "1.0.0",
   "icon": "pie-chart",

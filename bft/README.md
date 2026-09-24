@@ -1,11 +1,8 @@
-# Bullseye — Qlik Sense extension
+# BFT — Qlik Sense extension
 
-A part-to-whole chart drawn as concentric rings, styled to sit naturally next to
-Qlik's native charts: Qlik's 12-colour palette, white separators, plain Source
-Sans typography, transparent background. One dimension gives you a donut. Add
-more and each becomes a ring, dimension 1 in the centre.
-
-For the vintage, badge-styled version of the same chart see `../bft`.
+A part-to-whole chart drawn as concentric rings, like the layers of a target.
+One dimension gives you a donut. Add more and each becomes a ring, dimension 1
+in the centre.
 
 ## Two behaviours
 
@@ -26,35 +23,32 @@ are untouched.
 
 ## Install
 
-1. Zip the `bullseye` folder (or use `bullseye.zip` next to it).
+1. Zip the `bft` folder (or use `bft.zip` next to it).
 2. Qlik Cloud: Management Console › Extensions › Add. Qlik Sense Enterprise on
    Windows: QMC › Extensions › Import.
-3. Add **Bullseye** to a sheet with 1–6 dimensions and 1 measure.
+3. Add **BFT** to a sheet with 1–6 dimensions and 1 measure.
 
 ## Data notes
 
-- Use one regular dimension per ring. A Qlik *drill-down* master dimension
-  exposes only one level at a time, so it produces a single ring; the chart
-  shows a note when it sees one.
 - Data comes from one straight hypercube (all dimensions + the measure). Inner
   rings are sums of the leaf rows, so use an additive measure (Sum, Count).
   Averages and distinct counts will not roll up correctly.
-- Up to 25,000 rows are paged in. Null dimension values render as a grey
+- Up to 25,000 rows are paged in. Null dimension values render as a neutral
   segment that cannot be selected.
 - Segment order defaults to largest first; switch to *Follow sorting settings*
   to use the Sorting panel instead.
 
-## Options
+## Style
 
-Ring behaviour, click behaviour, segment order, ring order, centre size, ring
-and segment gaps, segment labels (name, share, or value), centre total with an
-optional caption, compact or exact numbers, legend and ring key, palette
-(Qlik 12, colour-blind safe, soft, or custom hex list), and whether outer rings
-lighten toward the edge.
+Five vintage palettes (Campfire, Tidewater, Sunbaked, Pine & Ember, National
+Park) plus a custom list of hex colours. Paper background, print grain, and the
+badge frame can each be switched off; paper and ink colours can be overridden.
+In drilldown mode each top-level colour lightens toward the edge so a family of
+segments reads as one.
 
 ## Development
 
-`dev-preview/bullseye-preview.html` loads the extension against mock data with a
+`dev-preview/bft-preview.html` loads the extension against mock data with a
 fake selection API. Serve the `qlik` folder over HTTP (for example
 `python -m http.server 8765 --directory qlik` from the parent folder) and open
-`/dev-preview/bullseye-preview.html`.
+`/dev-preview/bft-preview.html`.
