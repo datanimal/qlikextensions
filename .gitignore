@@ -1,3 +1,5 @@
+# Editor and OS clutter. The built extension zips are deliberately tracked:
+# they are the download the README points people at.
 Thumbs.db
 .DS_Store
 *.log
