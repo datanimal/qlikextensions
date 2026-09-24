@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Bullseye Rings — dev preview</title>
+<link rel="stylesheet" href="../bullseye/style.css">
+<style>
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #d9d4c7; }
+  .bar { display:flex; gap:14px; align-items:center; padding:10px 18px; font-size:13px; background:#2b2119; color:#f2e8d5; flex-wrap:wrap }
+  .bar label { display:flex; gap:6px; align-items:center }
+  .bar select, .bar input { font: inherit }
+  .bar button { font: inherit; padding: 3px 10px }
+  .frame { margin: 18px auto; width: min(1100px, calc(100vw - 36px)); height: calc(100vh - 100px); min-height: 420px;
+    background: #fff; box-shadow: 0 6px 30px rgba(20,15,10,.25); position: relative; }
+  #log { position:fixed; right:8px; bottom:8px; font: 11px/1.4 Consolas, monospace; background:rgba(43,33,25,.92); color:#f2e8d5; padding:8px 10px; max-width:420px; max-height:160px; overflow:auto; white-space:pre-wrap }
+</style>
+</head>
+<body>
+<div class="bar">
+  <label>Mode <select id="mode"><option value="drilldown">drilldown</option><option value="independent">independent</option></select></label>
+  <label>Click <select id="drillSelect"><option value="path">path</option><option value="additive">additive</option></select></label>
+  <label>Palette <select id="palette"><option>campfire</option><option>tidewater</option><option>sunbaked</option><option>pine</option><option>park</option></select></label>
+  <label>Dims <select id="ndims"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></label>
+  <label>Labels <select id="labelContent"><option value="name">name</option><option value="pct">pct</option><option value="value">value</option></select></label>
+  <label>Centre <input id="hole" type="range" min="0" max="0.7" step="0.05" value="0.3"></label>
+  <label><input id="grain" type="checkbox" checked> grain</label>
+  <label><input id="paper" type="checkbox" checked> paper</label>
+  <label><input id="legend" type="checkbox" checked> legend</label>
+  <button id="clear">Clear selections</button>
+</div>
+<div class="frame" id="host"></div>
+<div id="log"></div>
+<script>
+  /* ---- tiny AMD shim ---- */
+  var modules = {
+    "text!./style.css": "",
+    "qlik": { navigation: { getMode: function () { return "analysis"; } } }
+  };
+  var pendingDeps = null, pendingFactory = null;
+  window.define = function (deps, factory) {
+    if (typeof deps === "function") { factory = deps; deps = []; }
+    pendingDeps = deps; pendingFactory = factory;
+  };
+  window.define.amd = {};
+  function loadModule(name, src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = src;
+      s.onload = function () {
+        var args = (pendingDeps || []).map(function (d) { return modules[d]; });
+        modules[name] = pendingFactory.apply(null, args);
+        resolve(modules[name]);
+      };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  /* ---- mock data: Region > Country > City > Channel ---- */
+  var DATA = {
+    "North America": { "United States": { "New York": 1, "Los Angeles": 1, "Chicago": 1, "Houston": 1, "Seattle": 1 },
+                       "Canada": { "Toronto": 1, "Vancouver": 1, "Montréal": 1 },
+                       "Mexico": { "Mexico City": 1, "Guadalajara": 1 } },
+    "Europe": { "Germany": { "Berlin": 1, "Munich": 1, "Hamburg": 1 },
+                "United Kingdom": { "London": 1, "Manchester": 1 },
+                "France": { "Paris": 1, "Lyon": 1 },
+                "Spain": { "Madrid": 1, "Barcelona": 1 },
+                "Netherlands": { "Amsterdam": 1 } },
+    "Asia Pacific": { "Japan": { "Tokyo": 1, "Osaka": 1 },
+                      "Australia": { "Sydney": 1, "Melbourne": 1 },
+                      "Singapore": { "Singapore": 1 },
+                      "India": { "Mumbai": 1, "Bengaluru": 1, "Delhi": 1 } },
+    "Latin America": { "Brazil": { "São Paulo": 1, "Rio de Janeiro": 1 }, "Argentina": { "Buenos Aires": 1 }, "Chile": { "Santiago": 1 } },
+    "Middle East & Africa": { "UAE": { "Dubai": 1 }, "South Africa": { "Johannesburg": 1, "Cape Town": 1 } }
+  };
+  var CHANNELS = ["Online", "Retail", "Partner"];
+  var seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  var elems = [{}, {}, {}, {}];
+  function elem(d, txt) { if (elems[d][txt] === undefined) elems[d][txt] = Object.keys(elems[d]).length; return elems[d][txt]; }
+  var ROWS = [];
+  Object.keys(DATA).forEach(function (reg, ri) {
+    Object.keys(DATA[reg]).forEach(function (cty, ci) {
+      Object.keys(DATA[reg][cty]).forEach(function (city) {
+        CHANNELS.forEach(function (ch, k) {
+          var base = (5 - ri) * 40000 + (4 - ci) * 12000 + rnd() * 60000;
+          ROWS.push([reg, cty, city, ch, Math.round(base * (k === 0 ? 1.2 : k === 1 ? 0.9 : 0.5))]);
+        });
+      });
+    });
+  });
+  var DIMS = ["Region", "Country", "City", "Channel"];
+  var selected = [{}, {}, {}, {}]; /* dim -> elem -> true */
+
+  function aggregate(nd) {
+    var map = {}, out = [];
+    ROWS.forEach(function (r) {
+      var key = r.slice(0, nd).join("|");
+      if (!map[key]) { map[key] = r.slice(0, nd).concat([0]); out.push(map[key]); }
+      map[key][nd] += r[4];
+    });
+    return out;
+  }
+  function anySel(d) { return Object.keys(selected[d]).length > 0; }
+  function buildLayout(o) {
+    var nd = +ctl.ndims.value;
+    var rows = aggregate(nd);
+    /* Mimics Qlik's pending-selection state: every row stays visible,
+       cells carry S / X / O and excluded rows contribute no value. */
+    var matrix = rows.map(function (r) {
+      var excluded = false;
+      for (var d = 0; d < nd; d++) if (anySel(d) && !selected[d][elem(d, r[d])]) excluded = true;
+      var cells = [];
+      for (var i = 0; i < nd; i++) {
+        var e = elem(i, r[i]);
+        cells.push({ qText: r[i], qElemNumber: e, qState: selected[i][e] ? "S" : (excluded ? "X" : "O") });
+      }
+      cells.push({ qText: String(r[nd]), qNum: r[nd], qElemNumber: 0, qState: "L" });
+      return cells;
+    });
+    return {
+      qInfo: { qId: "preview" },
+      props: o,
+      qHyperCube: {
+        qDimensionInfo: DIMS.slice(0, nd).map(function (t) { return { qFallbackTitle: t }; }),
+        qMeasureInfo: [{ qFallbackTitle: "Sales", qNumFormat: { qnDec: 0 } }],
+        qSize: { qcx: nd + 1, qcy: matrix.length },
+        qDataPages: [{ qArea: { qTop: 0, qLeft: 0, qWidth: nd + 1, qHeight: matrix.length }, qMatrix: matrix }]
+      }
+    };
+  }
+
+  var ctl = {};
+  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "grain", "paper", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
+  function opts() {
+    return { mode: ctl.mode.value, drillSelect: ctl.drillSelect.value, palette: ctl.palette.value,
+      labelContent: ctl.labelContent.value, hole: +ctl.hole.value, grain: ctl.grain.checked,
+      paper: ctl.paper.checked, showLegend: ctl.legend.checked };
+  }
+  function log(s) { var l = document.getElementById("log"); l.textContent = (s + "\n" + l.textContent).slice(0, 4000); }
+
+  var ext, host = document.getElementById("host");
+  var mockBackend = {
+    selectValues: function (dim, values, toggle) {
+      log("selectValues(dim=" + dim + ", [" + values.join(",") + "], toggle=" + toggle + ")");
+      if (!toggle) selected[dim] = {};
+      values.forEach(function (v) {
+        if (toggle && selected[dim][v]) delete selected[dim][v]; else selected[dim][v] = true;
+      });
+      setTimeout(repaint, 0);
+      return Promise.resolve();
+    }
+  };
+  function repaint() {
+    var ctx = { backendApi: mockBackend };
+    ext.paint.call(ctx, [host], buildLayout(opts()));
+  }
+  Object.keys(ctl).forEach(function (k) { ctl[k].addEventListener("input", repaint); ctl[k].addEventListener("change", repaint); });
+  document.getElementById("clear").addEventListener("click", function () { selected = [{}, {}, {}, {}]; repaint(); });
+  window.addEventListener("resize", repaint);
+  window.__sel = function () { return selected; };
+
+  loadModule("./properties", "../bullseye/properties.js")
+    .then(function () { return loadModule("./bullseye", "../bullseye/bullseye.js"); })
+    .then(function (m) { ext = m; window.__ext = ext; repaint(); })
+    .catch(function (e) { log("load error: " + e); });
+</script>
+</body>
+</html>

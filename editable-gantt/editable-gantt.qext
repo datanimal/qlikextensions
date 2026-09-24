@@ -1,0 +1,13 @@
+{
+  "name": "Editable Gantt",
+  "description": "A beautifully simple, editable Gantt chart. Plan and update project timelines directly on the sheet: drag bars to reschedule, resize to change duration, link dependencies, track progress and milestones. Optionally drive it from your data model.",
+  "type": "visualization",
+  "version": "1.0.0",
+  "icon": "extension",
+  "author": "Benjamin Rode",
+  "license": "MIT",
+  "keywords": "qlik-visualization-extension",
+  "dependencies": {
+    "qlik-sense": ">=3.0.x"
+  }
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Editable Gantt — dev preview</title>
+<link rel="stylesheet" href="../editable-gantt/style.css">
+<style>
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #eef0f4; }
+  .frame {
+    margin: 24px auto;
+    width: min(1150px, calc(100vw - 48px));
+    height: calc(100vh - 48px);
+    min-height: 480px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(30,37,55,.12);
+    overflow: hidden;
+    position: relative;
+  }
+</style>
+</head>
+<body>
+<div class="frame" id="host"></div>
+<script>
+  /* Minimal AMD shim: enough to load properties.js then editable-gantt.js */
+  var modules = { "text!./style.css": "" };
+  var pendingDeps = null, pendingFactory = null;
+  window.define = function (deps, factory) {
+    if (typeof deps === "function") { factory = deps; deps = []; }
+    pendingDeps = deps; pendingFactory = factory;
+  };
+  window.define.amd = {};
+
+  function loadModule(name, src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = src;
+      s.onload = function () {
+        var args = (pendingDeps || []).map(function (d) { return modules[d]; });
+        modules[name] = pendingFactory.apply(null, args);
+        resolve();
+      };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  loadModule("./properties", "../editable-gantt/properties.js")
+    .then(function () {
+      return loadModule("ext", "../editable-gantt/editable-gantt.js");
+    })
+    .then(function () {
+      var ext = modules.ext;
+      var layout = JSON.parse(JSON.stringify(ext.initialProperties));
+      layout.qInfo = { qId: "preview1" };
+      layout.qHyperCube = { qDimensionInfo: [], qMeasureInfo: [], qDataPages: [] };
+
+      var host = document.getElementById("host");
+      var fakeThis = {
+        backendApi: {
+          applyPatches: function (patches, soft) {
+            /* mirror what the Qlik engine would do: update layout + repaint */
+            try {
+              var v = JSON.parse(patches[0].qValue);
+              layout.ganttData = v;
+            } catch (e) { /* noop */ }
+            console.log("applyPatches (soft=" + !!soft + ")", patches);
+            return Promise.resolve();
+          },
+          selectValues: function (dim, vals) {
+            console.log("selectValues", dim, vals);
+          }
+        }
+      };
+      function paint() { ext.paint.call(fakeThis, [host], layout); }
+      paint();
+      window.addEventListener("resize", paint);
+    })
+    .catch(function (e) { document.body.textContent = "Load failed: " + e; });
+</script>
+</body>
+</html>

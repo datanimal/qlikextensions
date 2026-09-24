@@ -1,0 +1,138 @@
+/* Bullseye Rings — styles */
+.by-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  font-family: "Bahnschrift", "Avenir Next Condensed", "Roboto Condensed",
+    "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+.by-svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: block;
+}
+.by-seg {
+  cursor: pointer;
+  transition: opacity 160ms ease;
+}
+.by-seg.by-nosel { cursor: default; }
+.by-seg.by-faded { opacity: 0.28; }
+.by-svg.by-hovering .by-seg { opacity: 0.22; }
+.by-svg.by-hovering .by-seg.by-lit { opacity: 1; }
+.by-svg.by-hovering .by-seg.by-lit.by-faded { opacity: 0.6; }
+.by-labels, .by-selg, .by-center, .by-grain, .by-frame { pointer-events: none; }
+.by-label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.by-c-label, .by-c-sub {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+.by-c-value {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.by-legend {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 4px 10px 7px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.by-ringkey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  opacity: 0.78;
+}
+.by-rk b {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  line-height: 15px;
+  text-align: center;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  margin-right: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.by-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.by-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.by-chip:hover { text-decoration: underline; }
+.by-sw {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.by-tip {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  min-width: 120px;
+  max-width: 260px;
+  padding: 8px 11px 9px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.18);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.by-tip .t-crumb {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+.by-tip .t-name {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.by-tip .t-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+.by-tip .t-row span:last-child { font-weight: 700; }
+.by-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
