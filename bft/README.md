@@ -28,6 +28,13 @@ are untouched.
    Windows: QMC › Extensions › Import.
 3. Add **BFT** to a sheet with 1–6 dimensions and 1 measure.
 
+## Requirements
+
+Qlik Sense 3.0 or newer, on Qlik Cloud or Qlik Sense Enterprise, in a current
+browser. BFT is plain JavaScript with no build step and no external
+libraries, so nothing is fetched at runtime and it works on a tenant with no
+internet access. Touch and mouse are both supported.
+
 ## Data notes
 
 - Data comes from one straight hypercube (all dimensions + the measure). Inner
@@ -71,3 +78,7 @@ Grab it again to stop it dead.
 fake selection API. Serve the `qlik` folder over HTTP (for example
 `python -m http.server 8765 --directory qlik` from the parent folder) and open
 `/dev-preview/bft-preview.html`.
+
+## Licence
+
+MIT. Use it, change it, ship it.
