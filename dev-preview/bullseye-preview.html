@@ -25,6 +25,7 @@
   <label>Centre <input id="hole" type="range" min="0" max="0.7" step="0.05" value="0.3"></label>
   <label><input id="legend" type="checkbox" checked> legend</label>
   <label><input id="collapse" type="checkbox" checked> collapse singles</label>
+  <label><input id="spin" type="checkbox"> wheel of fortune</label>
   <button id="confirm">Confirm selections</button>
   <button id="clear">Clear selections</button>
 </div>
@@ -133,11 +134,11 @@
   }
 
   var ctl = {};
-  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "collapse", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
+  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "collapse", "spin", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
   function opts() {
     return { mode: ctl.mode.value, drillSelect: ctl.drillSelect.value, palette: ctl.palette.value,
       labelContent: ctl.labelContent.value, hole: +ctl.hole.value,
-      showLegend: ctl.legend.checked, collapseSingles: ctl.collapse.checked };
+      showLegend: ctl.legend.checked, collapseSingles: ctl.collapse.checked, spin: ctl.spin.checked };
   }
   function log(s) { var l = document.getElementById("log"); l.textContent = (s + "\n" + l.textContent).slice(0, 4000); }
 

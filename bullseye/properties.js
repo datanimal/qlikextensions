@@ -87,6 +87,20 @@ define([], function () {
               "in the ring key and in tooltips.",
             show: function (p) { return !p.props || p.props.collapseSingles !== false; }
           },
+          spin: {
+            ref: "props.spin",
+            label: "Wheel of Fortune mode",
+            type: "boolean",
+            defaultValue: false
+          },
+          spinHint: {
+            component: "text",
+            label:
+              "Click and drag the rings to spin the wheel. Let go while moving " +
+              "and it keeps spinning, slowing to a stop against the pointer at " +
+              "the top. A short click still selects a segment.",
+            show: function (p) { return p.props && p.props.spin; }
+          },
           hole: {
             ref: "props.hole",
             label: "Centre size",

@@ -68,6 +68,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     segmentOrder: "value",
     reverseRings: false,
     collapseSingles: true,
+    spin: false,
     hole: 0.3,
     ringGap: 3,
     segmentGap: 2,
@@ -475,6 +476,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var fill = luminance(n.color) > 0.3 ? theme.ink : theme.tint;
     var x = f2(geom.cx + rMid * Math.sin(am)), y = f2(geom.cy - rMid * Math.cos(am));
     var s = '<text class="by-label" transform="translate(' + x + ',' + y + ') rotate(' + f2(rot) + ')"' +
+      ' data-am="' + f2(deg) + '" data-x="' + x + '" data-y="' + y + '" data-h="' + (horizontal ? 1 : 0) + '"' +
       ' text-anchor="middle" font-size="' + f2(fs) + '" fill="' + fill + '">';
     if (second) {
       s += '<tspan x="0" dy="-0.5em">' + esc(text) + '</tspan>' +
@@ -496,6 +498,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
         '<circle cx="' + cx + '" cy="' + cy + '" r="' + f2(geom.R + 9) + '" stroke-width="0.7" stroke-dasharray="1.5 3" opacity="0.75"/>' +
         '</g>');
     }
+    s.push('<g class="by-rot">');
     s.push('<g class="by-segs" fill-rule="evenodd">');
     model.nodes.forEach(function (n) {
       if (n.hidden || !(n.a1 > n.a0)) return;
@@ -512,6 +515,15 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       s.push("</g>");
     }
     s.push('<g class="by-selg" fill="none" stroke="' + theme.ink + '" stroke-width="2.4" stroke-linejoin="round"></g>');
+    s.push("</g>");
+    if (o.spin) {
+      /* the pointer the wheel comes to rest against, at 12 o'clock */
+      var py = geom.cy - geom.R;
+      s.push('<path class="by-pointer" d="M' + cx + ',' + f2(py + 13) +
+        ' L' + f2(geom.cx - 9) + ',' + f2(py - 7) +
+        ' L' + f2(geom.cx + 9) + ',' + f2(py - 7) + ' Z" fill="' + theme.ink +
+        '" stroke="' + theme.paper + '" stroke-width="1.5" stroke-linejoin="round"/>');
+    }
     if (o.showCenter) {
       var r = geom.hole - Math.max(geom.gap, 2) - 1;
       if (r >= 16) {
@@ -710,6 +722,143 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     return STATES[id];
   }
 
+  /* ================= wheel of fortune spin =================
+   * The drawn rings live in a <g class="by-rot"> that we rotate. The centre
+   * medallion and the pointer stay put. Rotation is kept in state so a
+   * repaint (a selection, say) leaves the wheel where the user spun it.
+   */
+  var FRICTION = 0.9965;   /* velocity decay per millisecond */
+  var STOP_VEL = 0.0015;   /* deg/ms below which the wheel is at rest */
+  var DRAG_SLOP = 4;       /* deg of travel before a drag stops being a click */
+
+  function normDeg(d) {
+    d = d % 360;
+    if (d > 180) d -= 360;
+    if (d < -180) d += 360;
+    return d;
+  }
+  function pointerAngle(st, evt) {
+    var r = st.svg.getBoundingClientRect();
+    if (!r.width || !r.height || !st.geom) return 0;
+    var sx = r.width / st.geom.W, sy = r.height / st.geom.H;
+    var cx = r.left + st.geom.cx * sx, cy = r.top + st.geom.cy * sy;
+    return Math.atan2(evt.clientY - cy, evt.clientX - cx) * 180 / Math.PI;
+  }
+  /* Labels are painted on the wheel, so a spin would leave half of them
+   * upside down. Flip the ones that have crossed to the far side, and hold
+   * upright labels upright. Only labels that actually changed are touched. */
+  function reorientLabels(st) {
+    var list = st.labelEls;
+    if (!list) return;
+    var s = st.spin || 0;
+    for (var i = 0; i < list.length; i++) {
+      var L = list[i], rot;
+      if (L.horiz) rot = -s;
+      else {
+        var abs = ((L.am + s) % 360 + 360) % 360;
+        rot = (abs > 90 && abs < 270) ? L.am + 180 : L.am;
+      }
+      if (rot !== L.rot) {
+        L.rot = rot;
+        L.el.setAttribute("transform", "translate(" + L.x + "," + L.y + ") rotate(" + f2(rot) + ")");
+      }
+    }
+  }
+  function collectLabels(st) {
+    st.labelEls = null;
+    if (!spinOn(st)) return;
+    var els = st.svg.querySelectorAll(".by-label"), out = [];
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i];
+      out.push({ el: e, am: +e.getAttribute("data-am"), x: e.getAttribute("data-x"),
+        y: e.getAttribute("data-y"), horiz: e.getAttribute("data-h") === "1", rot: null });
+    }
+    st.labelEls = out;
+  }
+  function applyRotation(st) {
+    var g = st.svg.querySelector(".by-rot");
+    if (!g || !st.geom) return;
+    var deg = st.spin || 0;
+    g.setAttribute("transform", "rotate(" + f2(deg) + "," + f2(st.geom.cx) + "," + f2(st.geom.cy) + ")");
+    reorientLabels(st);
+  }
+  function stopCoast(st) {
+    if (st.raf) { cancelAnimationFrame(st.raf); st.raf = null; }
+    st.vel = 0;
+  }
+  function coast(st) {
+    /* cancel any frame in flight but keep the velocity we were just handed */
+    if (st.raf) { cancelAnimationFrame(st.raf); st.raf = null; }
+    var last = (window.performance && performance.now) ? performance.now() : Date.now();
+    function step(now) {
+      st.raf = null;
+      var dt = Math.min(64, now - last);
+      last = now;
+      st.spin = (st.spin || 0) + st.vel * dt;
+      st.vel *= Math.pow(FRICTION, dt);
+      applyRotation(st);
+      if (Math.abs(st.vel) > STOP_VEL) st.raf = requestAnimationFrame(step);
+      else st.vel = 0;
+    }
+    st.raf = requestAnimationFrame(step);
+  }
+  function spinOn(st) { return !!(st.opts && st.opts.spin); }
+
+  function bindSpin(st) {
+    var svg = st.svg;
+    function down(e) {
+      if (!spinOn(st) || !st.model || e.button > 0) return;
+      stopCoast(st);
+      setHover(st, null);
+      st.drag = { last: pointerAngle(st, e), travel: 0, vel: 0,
+        t: (window.performance && performance.now) ? performance.now() : Date.now() };
+      if (svg.setPointerCapture && e.pointerId !== undefined) {
+        try { svg.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+      }
+      e.preventDefault();
+    }
+    function move(e) {
+      if (!st.drag) return;
+      var a = pointerAngle(st, e);
+      var d = normDeg(a - st.drag.last);
+      var now = (window.performance && performance.now) ? performance.now() : Date.now();
+      var dt = now - st.drag.t;
+      st.drag.last = a;
+      st.drag.t = now;
+      st.drag.travel += Math.abs(d);
+      st.spin = (st.spin || 0) + d;
+      /* smooth the velocity so one jittery frame cannot fling the wheel */
+      if (dt > 0) st.drag.vel = 0.75 * (d / dt) + 0.25 * st.drag.vel;
+      applyRotation(st);
+      e.preventDefault();
+    }
+    function up(e) {
+      if (!st.drag) return;
+      var drag = st.drag;
+      st.drag = null;
+      if (svg.releasePointerCapture && e.pointerId !== undefined) {
+        try { svg.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
+      }
+      /* a real spin should not also select the segment under the cursor */
+      st.suppressClick = drag.travel > DRAG_SLOP;
+      var idle = ((window.performance && performance.now) ? performance.now() : Date.now()) - drag.t;
+      if (drag.travel > DRAG_SLOP && idle < 120 && Math.abs(drag.vel) > STOP_VEL) {
+        st.vel = Math.max(-2.5, Math.min(2.5, drag.vel));
+        coast(st);
+      }
+    }
+    if (window.PointerEvent) {
+      svg.addEventListener("pointerdown", down);
+      svg.addEventListener("pointermove", move);
+      svg.addEventListener("pointerup", up);
+      svg.addEventListener("pointercancel", up);
+    } else {
+      svg.addEventListener("mousedown", down);
+      window.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", up);
+    }
+  }
+
   function nodeFromEvent(st, evt) {
     var t = evt.target;
     while (t && t !== st.root) {
@@ -721,14 +870,16 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
 
   function bindEvents(st) {
     var svg = st.svg;
+    bindSpin(st);
     svg.addEventListener("mousemove", function (e) {
-      if (!st.model) return;
+      if (!st.model || st.drag || st.vel) return;
       var n = nodeFromEvent(st, e);
       setHover(st, n && n.dim !== undefined ? n : null, e);
     });
     svg.addEventListener("mouseleave", function () { setHover(st, null); });
     svg.addEventListener("click", function (e) {
       if (!st.model) return;
+      if (st.suppressClick) { st.suppressClick = false; return; }
       var n = nodeFromEvent(st, e);
       if (n) doSelect(st, n);
     });
@@ -815,13 +966,19 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var H = Math.max(20, st.root.clientHeight -
       (o.showLegend ? st.legendEl.offsetHeight : 0) - st.noteEl.offsetHeight);
     var geom = computeGeometry(W, H, model.visibleDims.length, o);
+    geom.W = W; geom.H = H;
+    st.geom = geom;
     layoutModel(model, geom, o);
 
     st.svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     st.svg.setAttribute("width", W);
     st.svg.setAttribute("height", H);
     st.svg.classList.remove("by-hovering");
+    st.svg.classList.toggle("by-spinnable", !!o.spin);
+    if (!o.spin) { stopCoast(st); st.spin = 0; }
     st.svg.innerHTML = buildSvg(st, W, H, geom);
+    collectLabels(st);
+    applyRotation(st);
     hideTip(st);
     applySelectionClasses(st);
     updateCenter(st, null);

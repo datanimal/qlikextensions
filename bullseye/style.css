@@ -134,3 +134,6 @@
 }
 .be-rk-fixed { color: #595959; }
 .be-rk-fixed::before { content: "\2022"; margin-right: 5px; opacity: 0.6; }
+.be-svg.be-spinnable { cursor: grab; touch-action: none; }
+.be-svg.be-spinnable:active { cursor: grabbing; }
+.be-pointer { pointer-events: none; }

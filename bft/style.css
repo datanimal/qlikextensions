@@ -148,3 +148,6 @@
   opacity: 0.85;
 }
 .by-rk-fixed { opacity: 0.85; font-style: italic; text-transform: none; letter-spacing: 0.03em; }
+.by-svg.by-spinnable { cursor: grab; touch-action: none; }
+.by-svg.by-spinnable:active { cursor: grabbing; }
+.by-pointer { pointer-events: none; }

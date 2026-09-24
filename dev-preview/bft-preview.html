@@ -27,6 +27,7 @@
   <label><input id="paper" type="checkbox" checked> paper</label>
   <label><input id="legend" type="checkbox" checked> legend</label>
   <label><input id="collapse" type="checkbox" checked> collapse singles</label>
+  <label><input id="spin" type="checkbox"> wheel of fortune</label>
   <button id="confirm">Confirm selections</button>
   <button id="clear">Clear selections</button>
 </div>
@@ -135,11 +136,11 @@
   }
 
   var ctl = {};
-  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "collapse", "grain", "paper", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
+  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "collapse", "spin", "grain", "paper", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
   function opts() {
     return { mode: ctl.mode.value, drillSelect: ctl.drillSelect.value, palette: ctl.palette.value,
       labelContent: ctl.labelContent.value, hole: +ctl.hole.value, grain: ctl.grain.checked,
-      paper: ctl.paper.checked, showLegend: ctl.legend.checked, collapseSingles: ctl.collapse.checked };
+      paper: ctl.paper.checked, showLegend: ctl.legend.checked, collapseSingles: ctl.collapse.checked, spin: ctl.spin.checked };
   }
   function log(s) { var l = document.getElementById("log"); l.textContent = (s + "\n" + l.textContent).slice(0, 4000); }
 

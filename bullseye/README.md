@@ -56,6 +56,21 @@ optional caption, compact or exact numbers, legend and ring key, palette
 (Qlik 12, colour-blind safe, soft, or custom hex list), and whether outer rings
 lighten toward the edge.
 
+## Wheel of Fortune mode
+
+Switch it on under Rings and the chart becomes a wheel you can spin. Click and
+drag anywhere on the rings to turn it; let go while still moving and it keeps
+spinning, slowing under friction until it rests against the pointer at the top.
+Grab it again to stop it dead.
+
+- A short click still selects a segment. Only a click that follows real drag
+  travel is swallowed, so spinning never makes a selection by accident.
+- Labels stay right way up as the wheel turns.
+- Selections, tooltips and the centre total all work at any angle; the centre
+  and the pointer stay put while the rings move.
+- The angle is remembered, so a selection elsewhere on the sheet will not
+  reset the wheel. Turning the mode off returns it to 12 o'clock.
+
 ## Development
 
 `dev-preview/bullseye-preview.html` loads the extension against mock data with a
