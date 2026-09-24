@@ -4,14 +4,14 @@ Visualization extensions for Qlik Sense / Qlik Cloud by Benjamin Rode (MIT).
 
 | Extension | Folder | Upload | Look |
 |---|---|---|---|
-| Bullseye — concentric part-to-whole rings with drilldown or independent layers | `bullseye/` | `bullseye.zip` | Plain, matches Qlik's native charts |
+| Sunburst — concentric part-to-whole rings with drilldown or independent layers | `sunburst/` | `sunburst.zip` | Plain, matches Qlik's native charts |
 | BFT — the same ring chart, vintage badge styling (paper, grain, frame, custom palettes) | `bft/` | `bft.zip` | Decorative |
 | Editable Gantt — editable project timeline on the sheet | `editable-gantt/` | `editable-gantt.zip` | Plain |
 
 Each folder is a complete extension (`.qext`, `.js`, `properties.js`, `style.css`, `README.md`).
 Upload the matching zip in the Qlik Management Console under Extensions.
 
-Bullseye and BFT expect one regular dimension per ring. A Qlik drill-down master
+Sunburst and BFT expect one regular dimension per ring. A Qlik drill-down master
 dimension exposes one level at a time, so it yields a single ring; both charts
 show a note when they detect one.
 

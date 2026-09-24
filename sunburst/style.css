@@ -1,5 +1,5 @@
-/* Bullseye — styles (plain, Qlik Sense look) */
-.be-root {
+/* Sunburst — styles (plain, Qlik Sense look) */
+.sb-root {
   position: relative;
   width: 100%;
   height: 100%;
@@ -13,25 +13,25 @@
   -webkit-user-select: none;
   user-select: none;
 }
-.be-svg {
+.sb-svg {
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
   display: block;
 }
-.be-seg {
+.sb-seg {
   cursor: pointer;
   transition: opacity 120ms ease, fill 120ms ease;
 }
-.be-seg.be-nosel { cursor: default; }
-.be-seg.be-faded { fill: #dcdcdc; }
-.be-svg.be-hovering .be-seg { opacity: 0.45; }
-.be-svg.be-hovering .be-seg.be-lit { opacity: 1; }
-.be-labels, .be-selg, .be-center { pointer-events: none; }
-.be-label { font-weight: 400; }
-.be-c-label, .be-c-sub { font-weight: 400; }
-.be-c-value { font-weight: 600; }
-.be-legend {
+.sb-seg.sb-nosel { cursor: default; }
+.sb-seg.sb-faded { fill: #dcdcdc; }
+.sb-svg.sb-hovering .sb-seg { opacity: 0.45; }
+.sb-svg.sb-hovering .sb-seg.sb-lit { opacity: 1; }
+.sb-labels, .sb-selg, .sb-center { pointer-events: none; }
+.sb-label { font-weight: 400; }
+.sb-c-label, .sb-c-sub { font-weight: 400; }
+.sb-c-value { font-weight: 600; }
+.sb-legend {
   flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
@@ -41,13 +41,13 @@
   font-size: 12px;
   line-height: 16px;
 }
-.be-ringkey {
+.sb-ringkey {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
   color: #595959;
 }
-.be-rk b {
+.sb-rk b {
   display: inline-block;
   min-width: 14px;
   height: 14px;
@@ -60,26 +60,26 @@
   font-size: 10px;
   font-weight: 600;
 }
-.be-chips {
+.sb-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
 }
-.be-chip {
+.sb-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   white-space: nowrap;
 }
-.be-chip:hover { text-decoration: underline; }
-.be-sw {
+.sb-chip:hover { text-decoration: underline; }
+.sb-sw {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 2px;
 }
-.be-note {
+.sb-note {
   flex: 0 0 auto;
   margin: 0 8px 6px;
   padding: 6px 10px;
@@ -90,7 +90,7 @@
   line-height: 1.4;
   color: #595959;
 }
-.be-tip {
+.sb-tip {
   position: absolute;
   z-index: 5;
   pointer-events: none;
@@ -105,23 +105,23 @@
   font-size: 12px;
   line-height: 1.35;
 }
-.be-tip .t-crumb {
+.sb-tip .t-crumb {
   font-size: 11px;
   color: #595959;
   margin-bottom: 1px;
 }
-.be-tip .t-name {
+.sb-tip .t-name {
   font-weight: 600;
   font-size: 13px;
   margin-bottom: 4px;
 }
-.be-tip .t-row {
+.sb-tip .t-row {
   display: flex;
   justify-content: space-between;
   gap: 14px;
 }
-.be-tip .t-row span:last-child { font-weight: 600; }
-.be-empty {
+.sb-tip .t-row span:last-child { font-weight: 600; }
+.sb-empty {
   position: absolute;
   inset: 0;
   display: flex;
@@ -132,8 +132,8 @@
   font-size: 13px;
   color: #595959;
 }
-.be-rk-fixed { color: #595959; }
-.be-rk-fixed::before { content: "\2022"; margin-right: 5px; opacity: 0.6; }
-.be-svg.be-spinnable { cursor: grab; touch-action: none; }
-.be-svg.be-spinnable:active { cursor: grabbing; }
-.be-pointer { pointer-events: none; }
+.sb-rk-fixed { color: #595959; }
+.sb-rk-fixed::before { content: "\2022"; margin-right: 5px; opacity: 0.6; }
+.sb-svg.sb-spinnable { cursor: grab; touch-action: none; }
+.sb-svg.sb-spinnable:active { cursor: grabbing; }
+.sb-pointer { pointer-events: none; }

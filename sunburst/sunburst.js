@@ -1,5 +1,5 @@
 /* ============================================================
- * Bullseye — a Qlik Sense visualization extension (plain, Qlik-native styling)
+ * Sunburst — a Qlik Sense visualization extension (plain, Qlik-native styling)
  *
  * A part-to-whole chart drawn as concentric rings, one ring per
  * dimension (dimension 1 innermost, like the layers of a target).
@@ -19,9 +19,9 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   "use strict";
 
   /* ---------- one-time style injection ---------- */
-  if (!document.getElementById("be-style")) {
+  if (!document.getElementById("sb-style")) {
     var styleTag = document.createElement("style");
-    styleTag.id = "be-style";
+    styleTag.id = "sb-style";
     styleTag.textContent = css;
     document.head.appendChild(styleTag);
   }
@@ -458,7 +458,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var rot = horizontal ? 0 : ((deg > 90 && deg < 270) ? deg + 180 : deg);
     var fill = luminance(n.color) > 0.3 ? theme.ink : theme.tint;
     var x = f2(geom.cx + rMid * Math.sin(am)), y = f2(geom.cy - rMid * Math.cos(am));
-    var s = '<text class="be-label" transform="translate(' + x + ',' + y + ') rotate(' + f2(rot) + ')"' +
+    var s = '<text class="sb-label" transform="translate(' + x + ',' + y + ') rotate(' + f2(rot) + ')"' +
       ' data-am="' + f2(deg) + '" data-x="' + x + '" data-y="' + y + '" data-h="' + (horizontal ? 1 : 0) + '"' +
       ' text-anchor="middle" font-size="' + f2(fs) + '" fill="' + fill + '">';
     if (second) {
@@ -474,28 +474,28 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var model = st.model, o = st.opts, theme = st.theme;
     var s = [];
     var cx = f2(geom.cx), cy = f2(geom.cy);
-    s.push('<g class="be-rot">');
-    s.push('<g class="be-segs" fill-rule="evenodd">');
+    s.push('<g class="sb-rot">');
+    s.push('<g class="sb-segs" fill-rule="evenodd">');
     model.nodes.forEach(function (n) {
       if (n.hidden || !(n.a1 > n.a0)) return;
       var d = arcPath(geom.cx, geom.cy, n.r0, n.r1, n.a0, n.a1);
       if (!d) return;
-      s.push('<path class="be-seg' + (n.selectable ? "" : " be-nosel") + '" data-id="' + n.id + '" d="' + d +
+      s.push('<path class="sb-seg' + (n.selectable ? "" : " sb-nosel") + '" data-id="' + n.id + '" d="' + d +
         '" fill="' + n.color + '" stroke="' + theme.paper + '" stroke-width="' + o.segmentGap +
         '" stroke-linejoin="round"/>');
     });
     s.push("</g>");
     if (o.showLabels) {
-      s.push('<g class="be-labels">');
+      s.push('<g class="sb-labels">');
       model.nodes.forEach(function (n) { s.push(labelSvg(n, model, o, theme, geom)); });
       s.push("</g>");
     }
-    s.push('<g class="be-selg" fill="none" stroke="' + theme.ink + '" stroke-width="1.5" stroke-linejoin="round"></g>');
+    s.push('<g class="sb-selg" fill="none" stroke="' + theme.ink + '" stroke-width="1.5" stroke-linejoin="round"></g>');
     s.push("</g>");
     if (o.spin) {
       /* the pointer the wheel comes to rest against, at 12 o'clock */
       var py = geom.cy - geom.R;
-      s.push('<path class="be-pointer" d="M' + cx + ',' + f2(py + 13) +
+      s.push('<path class="sb-pointer" d="M' + cx + ',' + f2(py + 13) +
         ' L' + f2(geom.cx - 9) + ',' + f2(py - 7) +
         ' L' + f2(geom.cx + 9) + ',' + f2(py - 7) + ' Z" fill="' + theme.ink +
         '" stroke="' + theme.paper + '" stroke-width="1.5" stroke-linejoin="round"/>');
@@ -504,10 +504,10 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       var r = geom.hole - Math.max(geom.gap, 2) - 1;
       if (r >= 16) {
         st.centerR = r;
-        s.push('<g class="be-center">' +
-          '<text class="be-c-label" x="' + cx + '" y="' + f2(geom.cy - r * 0.30) + '" text-anchor="middle" fill="' + theme.muted + '"></text>' +
-          '<text class="be-c-value" x="' + cx + '" y="' + f2(geom.cy + r * 0.12) + '" text-anchor="middle" fill="' + theme.ink + '"></text>' +
-          '<text class="be-c-sub" x="' + cx + '" y="' + f2(geom.cy + r * 0.44) + '" text-anchor="middle" fill="' + theme.muted + '"></text>' +
+        s.push('<g class="sb-center">' +
+          '<text class="sb-c-label" x="' + cx + '" y="' + f2(geom.cy - r * 0.30) + '" text-anchor="middle" fill="' + theme.muted + '"></text>' +
+          '<text class="sb-c-value" x="' + cx + '" y="' + f2(geom.cy + r * 0.12) + '" text-anchor="middle" fill="' + theme.ink + '"></text>' +
+          '<text class="sb-c-sub" x="' + cx + '" y="' + f2(geom.cy + r * 0.44) + '" text-anchor="middle" fill="' + theme.muted + '"></text>' +
           "</g>");
       } else st.centerR = 0;
     } else st.centerR = 0;
@@ -527,14 +527,14 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       return { ring: o.reverseRings ? nVis - ri : ri + 1, title: t };
     }).sort(function (a, b) { return a.ring - b.ring; });
     if (m.nDims > 1 || m.mode !== "drilldown") {
-      h.push('<div class="be-ringkey">' + key.map(function (k) {
-        if (k.ring < 0) return '<span class="be-rk be-rk-fixed">' + esc(k.title) + ": " + esc(k.value) + "</span>";
-        return '<span class="be-rk"><b>' + k.ring + "</b>" + esc(k.title) + "</span>";
+      h.push('<div class="sb-ringkey">' + key.map(function (k) {
+        if (k.ring < 0) return '<span class="sb-rk sb-rk-fixed">' + esc(k.title) + ": " + esc(k.value) + "</span>";
+        return '<span class="sb-rk"><b>' + k.ring + "</b>" + esc(k.title) + "</span>";
       }).join("") + "</div>");
     }
     if (m.mode === "drilldown") {
-      h.push('<div class="be-chips">' + firstVisibleLevel(m).slice(0, 40).map(function (c) {
-        return '<span class="be-chip" data-id="' + c.id + '"><i class="be-sw" style="background:' + c.color + '"></i>' + esc(c.name) + "</span>";
+      h.push('<div class="sb-chips">' + firstVisibleLevel(m).slice(0, 40).map(function (c) {
+        return '<span class="sb-chip" data-id="' + c.id + '"><i class="sb-sw" style="background:' + c.color + '"></i>' + esc(c.name) + "</span>";
       }).join("") + "</div>");
     }
     L.innerHTML = h.join("");
@@ -544,17 +544,17 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   function applySelectionClasses(st) {
     var m = st.model, selDims = {}, sel = [];
     m.nodes.forEach(function (n) { if (n.state === "S") selDims[n.dim] = true; });
-    var segs = st.svg.querySelectorAll(".be-seg");
+    var segs = st.svg.querySelectorAll(".sb-seg");
     st.segEls = {};
     for (var i = 0; i < segs.length; i++) {
       var el = segs[i], n = m.byId[el.getAttribute("data-id")];
       if (!n) continue;
       st.segEls[n.id] = el;
       var faded = n.state === "X" || (selDims[n.dim] && n.state !== "S");
-      el.classList.toggle("be-faded", !!faded);
+      el.classList.toggle("sb-faded", !!faded);
       if (n.state === "S") sel.push('<path d="' + el.getAttribute("d") + '"/>');
     }
-    var g = st.svg.querySelector(".be-selg");
+    var g = st.svg.querySelector(".sb-selg");
     if (g) g.innerHTML = sel.join("");
   }
 
@@ -563,7 +563,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var r = st.centerR;
     if (!r) return;
     var svg = st.svg, m = st.model, o = st.opts;
-    var lab = svg.querySelector(".be-c-label"), val = svg.querySelector(".be-c-value"), sub = svg.querySelector(".be-c-sub");
+    var lab = svg.querySelector(".sb-c-label"), val = svg.querySelector(".sb-c-value"), sub = svg.querySelector(".sb-c-sub");
     if (!lab || !val || !sub) return;
     var label = node ? node.name : (o.centerLabel || m.measureTitle || "");
     var value = fmtNumber(node ? node.value : m.total, o.numberFormat, m.decimals);
@@ -623,17 +623,17 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     st.hover = node;
     var id;
     if (!node) {
-      svg.classList.remove("be-hovering");
-      for (id in st.segEls) st.segEls[id].classList.remove("be-lit");
+      svg.classList.remove("sb-hovering");
+      for (id in st.segEls) st.segEls[id].classList.remove("sb-lit");
       hideTip(st);
       updateCenter(st, null);
       return;
     }
-    svg.classList.add("be-hovering");
+    svg.classList.add("sb-hovering");
     var lit = {}, a = node;
     while (a && a.depth > 0) { lit[a.id] = true; a = a.parent; }
     (function rec(n) { n.children.forEach(function (c) { lit[c.id] = true; rec(c); }); })(node);
-    for (id in st.segEls) st.segEls[id].classList.toggle("be-lit", !!lit[id]);
+    for (id in st.segEls) st.segEls[id].classList.toggle("sb-lit", !!lit[id]);
     updateCenter(st, node);
     showTip(st, node, evt);
   }
@@ -676,7 +676,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       }
     }
     calls.reduce(function (p, fn) { return p.then(fn); }, Promise.resolve())
-      .catch(function (e) { if (window.console) console.warn("Bullseye: selection failed", e); });
+      .catch(function (e) { if (window.console) console.warn("Sunburst: selection failed", e); });
   }
 
   /* ================= DOM & events ================= */
@@ -687,7 +687,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   }
 
   /* ================= wheel of fortune spin =================
-   * The drawn rings live in a <g class="be-rot"> that we rotate. The centre
+   * The drawn rings live in a <g class="sb-rot"> that we rotate. The centre
    * medallion and the pointer stay put. Rotation is kept in state so a
    * repaint (a selection, say) leaves the wheel where the user spun it.
    */
@@ -695,6 +695,9 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   var STOP_VEL = 0.0015;   /* deg/ms below which the wheel is at rest */
   var DRAG_SLOP = 4;       /* deg of travel before a drag stops being a click */
 
+  function nowMs() {
+    return (window.performance && performance.now) ? performance.now() : Date.now();
+  }
   function normDeg(d) {
     d = d % 360;
     if (d > 180) d -= 360;
@@ -731,7 +734,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   function collectLabels(st) {
     st.labelEls = null;
     if (!spinOn(st)) return;
-    var els = st.svg.querySelectorAll(".be-label"), out = [];
+    var els = st.svg.querySelectorAll(".sb-label"), out = [];
     for (var i = 0; i < els.length; i++) {
       var e = els[i];
       out.push({ el: e, am: +e.getAttribute("data-am"), x: e.getAttribute("data-x"),
@@ -740,7 +743,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     st.labelEls = out;
   }
   function applyRotation(st) {
-    var g = st.svg.querySelector(".be-rot");
+    var g = st.svg.querySelector(".sb-rot");
     if (!g || !st.geom) return;
     var deg = st.spin || 0;
     g.setAttribute("transform", "rotate(" + f2(deg) + "," + f2(st.geom.cx) + "," + f2(st.geom.cy) + ")");
@@ -753,7 +756,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   function coast(st) {
     /* cancel any frame in flight but keep the velocity we were just handed */
     if (st.raf) { cancelAnimationFrame(st.raf); st.raf = null; }
-    var last = (window.performance && performance.now) ? performance.now() : Date.now();
+    var last = nowMs();
     function step(now) {
       st.raf = null;
       var dt = Math.min(64, now - last);
@@ -775,7 +778,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       stopCoast(st);
       setHover(st, null);
       st.drag = { last: pointerAngle(st, e), travel: 0, vel: 0,
-        t: (window.performance && performance.now) ? performance.now() : Date.now() };
+        t: nowMs() };
       if (svg.setPointerCapture && e.pointerId !== undefined) {
         try { svg.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
       }
@@ -785,7 +788,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       if (!st.drag) return;
       var a = pointerAngle(st, e);
       var d = normDeg(a - st.drag.last);
-      var now = (window.performance && performance.now) ? performance.now() : Date.now();
+      var now = nowMs();
       var dt = now - st.drag.t;
       st.drag.last = a;
       st.drag.t = now;
@@ -803,9 +806,10 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       if (svg.releasePointerCapture && e.pointerId !== undefined) {
         try { svg.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
       }
-      /* a real spin should not also select the segment under the cursor */
-      st.suppressClick = drag.travel > DRAG_SLOP;
-      var idle = ((window.performance && performance.now) ? performance.now() : Date.now()) - drag.t;
+      /* a real spin should not also select the segment under the cursor, but
+       * only the click the browser fires right after this drag is swallowed */
+      st.suppressClick = drag.travel > DRAG_SLOP ? nowMs() : 0;
+      var idle = (nowMs()) - drag.t;
       if (drag.travel > DRAG_SLOP && idle < 120 && Math.abs(drag.vel) > STOP_VEL) {
         st.vel = Math.max(-2.5, Math.min(2.5, drag.vel));
         coast(st);
@@ -843,7 +847,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     svg.addEventListener("mouseleave", function () { setHover(st, null); });
     svg.addEventListener("click", function (e) {
       if (!st.model) return;
-      if (st.suppressClick) { st.suppressClick = false; return; }
+      if (st.suppressClick && nowMs() - st.suppressClick < 400) { st.suppressClick = 0; return; }
       var n = nodeFromEvent(st, e);
       if (n) doSelect(st, n);
     });
@@ -856,29 +860,29 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
 
   function ensureDom(el, st) {
     var root = el.firstElementChild;
-    if (!root || !root.classList.contains("be-root")) {
-      el.innerHTML = '<div class="be-root">' +
-        '<svg class="be-svg" xmlns="http://www.w3.org/2000/svg"></svg>' +
-        '<div class="be-legend"></div>' +
-        '<div class="be-note" style="display:none"></div>' +
-        '<div class="be-tip" style="display:none"></div>' +
-        '<div class="be-empty" style="display:none"></div>' +
+    if (!root || !root.classList.contains("sb-root")) {
+      el.innerHTML = '<div class="sb-root">' +
+        '<svg class="sb-svg" xmlns="http://www.w3.org/2000/svg"></svg>' +
+        '<div class="sb-legend"></div>' +
+        '<div class="sb-note" style="display:none"></div>' +
+        '<div class="sb-tip" style="display:none"></div>' +
+        '<div class="sb-empty" style="display:none"></div>' +
         "</div>";
       root = el.firstElementChild;
       st.root = root;
-      st.svg = root.querySelector(".be-svg");
-      st.legendEl = root.querySelector(".be-legend");
-      st.noteEl = root.querySelector(".be-note");
-      st.tip = root.querySelector(".be-tip");
-      st.emptyEl = root.querySelector(".be-empty");
+      st.svg = root.querySelector(".sb-svg");
+      st.legendEl = root.querySelector(".sb-legend");
+      st.noteEl = root.querySelector(".sb-note");
+      st.tip = root.querySelector(".sb-tip");
+      st.emptyEl = root.querySelector(".sb-empty");
       bindEvents(st);
     } else {
       st.root = root;
-      st.svg = root.querySelector(".be-svg");
-      st.legendEl = root.querySelector(".be-legend");
-      st.noteEl = root.querySelector(".be-note");
-      st.tip = root.querySelector(".be-tip");
-      st.emptyEl = root.querySelector(".be-empty");
+      st.svg = root.querySelector(".sb-svg");
+      st.legendEl = root.querySelector(".sb-legend");
+      st.noteEl = root.querySelector(".sb-note");
+      st.tip = root.querySelector(".sb-tip");
+      st.emptyEl = root.querySelector(".sb-empty");
     }
     return root;
   }
@@ -936,8 +940,8 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     st.svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     st.svg.setAttribute("width", W);
     st.svg.setAttribute("height", H);
-    st.svg.classList.remove("be-hovering");
-    st.svg.classList.toggle("be-spinnable", !!o.spin);
+    st.svg.classList.remove("sb-hovering");
+    st.svg.classList.toggle("sb-spinnable", !!o.spin);
     if (!o.spin) { stopCoast(st); st.spin = 0; }
     st.svg.innerHTML = buildSvg(st, W, H, geom);
     collectLabels(st);
@@ -970,10 +974,10 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       return fetchAll(self, layout).then(function (rows) {
         render(self, el, layout, rows);
       }).catch(function (e) {
-        if (window.console) console.error("Bullseye:", e);
+        if (window.console) console.error("Sunburst:", e);
         var st = getState((layout.qInfo && layout.qInfo.qId) || "x");
         ensureDom(el, st);
-        showEmpty(st, "Bullseye could not render: " + (e && e.message ? e.message : e));
+        showEmpty(st, "Sunburst could not render: " + (e && e.message ? e.message : e));
       });
     }
   };

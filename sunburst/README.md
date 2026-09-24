@@ -1,4 +1,4 @@
-# Bullseye — Qlik Sense extension
+# Sunburst — Qlik Sense extension
 
 A part-to-whole chart drawn as concentric rings, styled to sit naturally next to
 Qlik's native charts: Qlik's 12-colour palette, white separators, plain Source
@@ -26,10 +26,10 @@ are untouched.
 
 ## Install
 
-1. Zip the `bullseye` folder (or use `bullseye.zip` next to it).
+1. Zip the `sunburst` folder (or use `sunburst.zip` next to it).
 2. Qlik Cloud: Management Console › Extensions › Add. Qlik Sense Enterprise on
    Windows: QMC › Extensions › Import.
-3. Add **Bullseye** to a sheet with 1–6 dimensions and 1 measure.
+3. Add **Sunburst** to a sheet with 1–6 dimensions and 1 measure.
 
 ## Data notes
 
@@ -73,7 +73,7 @@ Grab it again to stop it dead.
 
 ## Development
 
-`dev-preview/bullseye-preview.html` loads the extension against mock data with a
+`dev-preview/sunburst-preview.html` loads the extension against mock data with a
 fake selection API. Serve the `qlik` folder over HTTP (for example
 `python -m http.server 8765 --directory qlik` from the parent folder) and open
-`/dev-preview/bullseye-preview.html`.
+`/dev-preview/sunburst-preview.html`.

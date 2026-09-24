@@ -731,6 +731,9 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   var STOP_VEL = 0.0015;   /* deg/ms below which the wheel is at rest */
   var DRAG_SLOP = 4;       /* deg of travel before a drag stops being a click */
 
+  function nowMs() {
+    return (window.performance && performance.now) ? performance.now() : Date.now();
+  }
   function normDeg(d) {
     d = d % 360;
     if (d > 180) d -= 360;
@@ -789,7 +792,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   function coast(st) {
     /* cancel any frame in flight but keep the velocity we were just handed */
     if (st.raf) { cancelAnimationFrame(st.raf); st.raf = null; }
-    var last = (window.performance && performance.now) ? performance.now() : Date.now();
+    var last = nowMs();
     function step(now) {
       st.raf = null;
       var dt = Math.min(64, now - last);
@@ -811,7 +814,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       stopCoast(st);
       setHover(st, null);
       st.drag = { last: pointerAngle(st, e), travel: 0, vel: 0,
-        t: (window.performance && performance.now) ? performance.now() : Date.now() };
+        t: nowMs() };
       if (svg.setPointerCapture && e.pointerId !== undefined) {
         try { svg.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
       }
@@ -821,7 +824,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       if (!st.drag) return;
       var a = pointerAngle(st, e);
       var d = normDeg(a - st.drag.last);
-      var now = (window.performance && performance.now) ? performance.now() : Date.now();
+      var now = nowMs();
       var dt = now - st.drag.t;
       st.drag.last = a;
       st.drag.t = now;
@@ -839,9 +842,10 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       if (svg.releasePointerCapture && e.pointerId !== undefined) {
         try { svg.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
       }
-      /* a real spin should not also select the segment under the cursor */
-      st.suppressClick = drag.travel > DRAG_SLOP;
-      var idle = ((window.performance && performance.now) ? performance.now() : Date.now()) - drag.t;
+      /* a real spin should not also select the segment under the cursor, but
+       * only the click the browser fires right after this drag is swallowed */
+      st.suppressClick = drag.travel > DRAG_SLOP ? nowMs() : 0;
+      var idle = (nowMs()) - drag.t;
       if (drag.travel > DRAG_SLOP && idle < 120 && Math.abs(drag.vel) > STOP_VEL) {
         st.vel = Math.max(-2.5, Math.min(2.5, drag.vel));
         coast(st);
@@ -879,7 +883,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     svg.addEventListener("mouseleave", function () { setHover(st, null); });
     svg.addEventListener("click", function (e) {
       if (!st.model) return;
-      if (st.suppressClick) { st.suppressClick = false; return; }
+      if (st.suppressClick && nowMs() - st.suppressClick < 400) { st.suppressClick = 0; return; }
       var n = nodeFromEvent(st, e);
       if (n) doSelect(st, n);
     });

@@ -2,8 +2,8 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Bullseye — dev preview</title>
-<link rel="stylesheet" href="../bullseye/style.css">
+<title>Sunburst — dev preview</title>
+<link rel="stylesheet" href="../sunburst/style.css">
 <style>
   body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #eef0f4; }
   .bar { display:flex; gap:14px; align-items:center; padding:10px 18px; font-size:13px; background:#2b2119; color:#f2e8d5; flex-wrap:wrap }
@@ -165,8 +165,8 @@
   window.addEventListener("resize", repaint);
   window.__sel = function () { return selected; };
 
-  loadModule("./properties", "../bullseye/properties.js")
-    .then(function () { return loadModule("./bullseye", "../bullseye/bullseye.js"); })
+  loadModule("./properties", "../sunburst/properties.js")
+    .then(function () { return loadModule("./sunburst", "../sunburst/sunburst.js"); })
     .then(function (m) { ext = m; window.__ext = ext; repaint(); })
     .catch(function (e) { log("load error: " + e); });
 </script>
