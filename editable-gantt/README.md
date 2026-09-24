@@ -58,6 +58,13 @@ dimension. Tasks whose start equals end render as milestones.
 Row density (comfortable/compact), color by group/task/single, week start day,
 today line, weekend shading, dependency arrows, and task-list width.
 
+## Requirements
+
+Qlik Sense 3.0 or newer, on Qlik Cloud or Qlik Sense Enterprise, in a current
+browser. Editable Gantt is plain JavaScript with no build step and no external
+libraries, so nothing is fetched at runtime and it works on a tenant with no
+internet access. Touch and mouse are both supported.
+
 ## Development
 
 `../dev-preview/preview.html` is a standalone harness that loads the extension
@@ -70,3 +77,7 @@ without uploading to a tenant.
 - `editable-gantt.js` — main module (rendering, interactions, persistence)
 - `properties.js` — property panel definition
 - `style.css` — styles
+
+## Licence
+
+MIT. Use it, change it, ship it.
