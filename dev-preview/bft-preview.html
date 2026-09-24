@@ -26,6 +26,8 @@
   <label><input id="grain" type="checkbox" checked> grain</label>
   <label><input id="paper" type="checkbox" checked> paper</label>
   <label><input id="legend" type="checkbox" checked> legend</label>
+  <label><input id="collapse" type="checkbox" checked> collapse singles</label>
+  <button id="confirm">Confirm selections</button>
   <button id="clear">Clear selections</button>
 </div>
 <div class="frame" id="host"></div>
@@ -91,6 +93,7 @@
   });
   var DIMS = ["Region", "Country", "City", "Channel"];
   var selected = [{}, {}, {}, {}]; /* dim -> elem -> true */
+  var confirmed = false;           /* true = excluded rows drop out, like a confirmed selection */
 
   function aggregate(nd) {
     var map = {}, out = [];
@@ -116,8 +119,9 @@
         cells.push({ qText: r[i], qElemNumber: e, qState: selected[i][e] ? "S" : (excluded ? "X" : "O") });
       }
       cells.push({ qText: String(r[nd]), qNum: r[nd], qElemNumber: 0, qState: "L" });
+      cells.excluded = excluded;
       return cells;
-    });
+    }).filter(function (c) { return !confirmed || !c.excluded; });
     return {
       qInfo: { qId: "preview" },
       props: o,
@@ -131,11 +135,11 @@
   }
 
   var ctl = {};
-  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "grain", "paper", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
+  ["mode", "drillSelect", "palette", "ndims", "labelContent", "hole", "collapse", "grain", "paper", "legend"].forEach(function (id) { ctl[id] = document.getElementById(id); });
   function opts() {
     return { mode: ctl.mode.value, drillSelect: ctl.drillSelect.value, palette: ctl.palette.value,
       labelContent: ctl.labelContent.value, hole: +ctl.hole.value, grain: ctl.grain.checked,
-      paper: ctl.paper.checked, showLegend: ctl.legend.checked };
+      paper: ctl.paper.checked, showLegend: ctl.legend.checked, collapseSingles: ctl.collapse.checked };
   }
   function log(s) { var l = document.getElementById("log"); l.textContent = (s + "\n" + l.textContent).slice(0, 4000); }
 
@@ -143,6 +147,7 @@
   var mockBackend = {
     selectValues: function (dim, values, toggle) {
       log("selectValues(dim=" + dim + ", [" + values.join(",") + "], toggle=" + toggle + ")");
+      confirmed = false;
       if (!toggle) selected[dim] = {};
       values.forEach(function (v) {
         if (toggle && selected[dim][v]) delete selected[dim][v]; else selected[dim][v] = true;
@@ -156,7 +161,8 @@
     ext.paint.call(ctx, [host], buildLayout(opts()));
   }
   Object.keys(ctl).forEach(function (k) { ctl[k].addEventListener("input", repaint); ctl[k].addEventListener("change", repaint); });
-  document.getElementById("clear").addEventListener("click", function () { selected = [{}, {}, {}, {}]; repaint(); });
+  document.getElementById("clear").addEventListener("click", function () { selected = [{}, {}, {}, {}]; confirmed = false; repaint(); });
+  document.getElementById("confirm").addEventListener("click", function () { confirmed = true; repaint(); });
   window.addEventListener("resize", repaint);
   window.__sel = function () { return selected; };
 

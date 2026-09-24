@@ -73,6 +73,20 @@ define([], function () {
             type: "boolean",
             defaultValue: false
           },
+          collapseSingles: {
+            ref: "props.collapseSingles",
+            label: "Hide rings with a single value",
+            type: "boolean",
+            defaultValue: true
+          },
+          collapseHint: {
+            component: "text",
+            label:
+              "When selections leave a dimension with one value, its ring is " +
+              "removed and the others take the space. The value stays visible " +
+              "in the ring key and in tooltips.",
+            show: function (p) { return !p.props || p.props.collapseSingles !== false; }
+          },
           hole: {
             ref: "props.hole",
             label: "Centre size",

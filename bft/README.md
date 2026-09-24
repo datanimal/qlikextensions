@@ -35,6 +35,10 @@ are untouched.
   Averages and distinct counts will not roll up correctly.
 - Up to 25,000 rows are paged in. Null dimension values render as a neutral
   segment that cannot be selected.
+- *Hide rings with a single value* (on by default): when selections leave a
+  dimension with one value, its ring is removed and the others expand. The
+  fixed value stays in the ring key (for example "Region: North America") and
+  in tooltip breadcrumbs.
 - Segment order defaults to largest first; switch to *Follow sorting settings*
   to use the Sorting panel instead.
 

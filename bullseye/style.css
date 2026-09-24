@@ -132,3 +132,5 @@
   font-size: 13px;
   color: #595959;
 }
+.be-rk-fixed { color: #595959; }
+.be-rk-fixed::before { content: "\2022"; margin-right: 5px; opacity: 0.6; }

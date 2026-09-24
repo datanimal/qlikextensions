@@ -56,6 +56,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     drillSelect: "path",
     segmentOrder: "value",
     reverseRings: false,
+    collapseSingles: true,
     hole: 0.35,
     ringGap: 2,
     segmentGap: 1,
@@ -284,15 +285,47 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     } else {
       model.rings.forEach(function (r) { order(r.children); });
     }
+    /* A dimension left with a single value carries no information; hide its
+     * ring (optionally) and let the others take the space. */
+    var distinct = [], k;
+    for (k = 0; k < nDims; k++) distinct.push({});
+    model.nodes.forEach(function (nd) { distinct[nd.dim][nd.isNull ? NULL_KEY : nd.elem] = true; });
+    model.collapsed = []; model.visibleDims = []; model.ringOf = {}; model.collapsedValue = [];
+    for (k = 0; k < nDims; k++) {
+      var one = !!o.collapseSingles && Object.keys(distinct[k]).length === 1;
+      model.collapsed.push(one);
+      if (!one) model.visibleDims.push(k);
+    }
+    if (!model.visibleDims.length && nDims) { model.collapsed[nDims - 1] = false; model.visibleDims.push(nDims - 1); }
+    model.visibleDims.forEach(function (dim, i) { model.ringOf[dim] = i; });
+    model.nodes.forEach(function (nd) { nd.hidden = model.collapsed[nd.dim]; });
+    for (k = 0; k < nDims; k++) {
+      var val = null;
+      if (model.collapsed[k]) {
+        for (var j = 0; j < model.nodes.length; j++) if (model.nodes[j].dim === k) { val = model.nodes[j].name; break; }
+      }
+      model.collapsedValue.push(val);
+    }
     return model;
+  }
+
+  /* nodes on the innermost ring that is actually drawn */
+  function firstVisibleLevel(model) {
+    var lvl = [model.root], d = 0;
+    while (d < model.nDims && model.collapsed[d]) {
+      lvl = lvl.reduce(function (acc, t) { return acc.concat(t.children); }, []);
+      d++;
+    }
+    return lvl.reduce(function (acc, t) { return acc.concat(t.children); }, []);
   }
 
   /* ================= colours ================= */
   function assignColors(model, o, theme) {
     var pal = theme.colors, n = pal.length;
     var nullColor = mix(theme.ink, theme.paper, 0.78);
+    model.nodes.forEach(function (nd) { nd.color = pal[0]; });
     if (model.mode === "drilldown") {
-      model.root.children.forEach(function (top) {
+      firstVisibleLevel(model).forEach(function (top) {
         var base = pal[top.index % n];
         (function rec(node, depthFromTop) {
           if (node.isNull) node.color = nullColor;
@@ -361,15 +394,15 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
   }
 
   function layoutModel(model, geom, o) {
-    var n = model.nDims;
-    function ringIndexFor(dim) { return o.reverseRings ? n - 1 - dim : dim; }
+    var n = model.visibleDims.length;
+    function ringIndexFor(dim) { var i = model.ringOf[dim]; return o.reverseRings ? n - 1 - i : i; }
     if (model.mode === "drilldown") {
       (function rec(node, a0, a1) {
         var span = a1 - a0, acc = a0, W = node.weight, k = node.children.length;
         node.children.forEach(function (c) {
           var s = W > 0 ? span * c.weight / W : span / k;
           c.a0 = acc; c.a1 = acc + s; acc += s;
-          var rr = ringRadii(geom, ringIndexFor(c.dim));
+          var rr = c.hidden ? [0, 0] : ringRadii(geom, ringIndexFor(c.dim));
           c.r0 = rr[0]; c.r1 = rr[1];
           rec(c, c.a0, c.a1);
         });
@@ -377,7 +410,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     } else {
       model.rings.forEach(function (ring) {
         var acc = 0, W = ring.weight, k = ring.children.length;
-        var rr = ringRadii(geom, ringIndexFor(ring.dim));
+        var rr = model.collapsed[ring.dim] ? [0, 0] : ringRadii(geom, ringIndexFor(ring.dim));
         ring.children.forEach(function (c) {
           var s = W > 0 ? TAU * c.weight / W : TAU / k;
           c.a0 = acc; c.a1 = acc + s; acc += s;
@@ -389,6 +422,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
 
   /* ================= SVG building ================= */
   function labelSvg(n, model, o, theme, geom) {
+    if (n.hidden) return "";
     var span = n.a1 - n.a0;
     if (span <= 0) return "";
     var band = n.r1 - n.r0, rMid = (n.r0 + n.r1) / 2;
@@ -440,7 +474,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var cx = f2(geom.cx), cy = f2(geom.cy);
     s.push('<g class="be-segs" fill-rule="evenodd">');
     model.nodes.forEach(function (n) {
-      if (!(n.a1 > n.a0)) return;
+      if (n.hidden || !(n.a1 > n.a0)) return;
       var d = arcPath(geom.cx, geom.cy, n.r0, n.r1, n.a0, n.a1);
       if (!d) return;
       s.push('<path class="be-seg' + (n.selectable ? "" : " be-nosel") + '" data-id="' + n.id + '" d="' + d +
@@ -474,16 +508,20 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     if (!o.showLegend) { L.style.display = "none"; L.innerHTML = ""; return; }
     L.style.display = "";
     var h = [];
+    var nVis = m.visibleDims.length;
     var key = m.dims.map(function (t, i) {
-      return { ring: o.reverseRings ? m.nDims - i : i + 1, title: t };
+      if (m.collapsed[i]) return { ring: -1, title: t, value: m.collapsedValue[i] };
+      var ri = m.ringOf[i];
+      return { ring: o.reverseRings ? nVis - ri : ri + 1, title: t };
     }).sort(function (a, b) { return a.ring - b.ring; });
     if (m.nDims > 1 || m.mode !== "drilldown") {
       h.push('<div class="be-ringkey">' + key.map(function (k) {
+        if (k.ring < 0) return '<span class="be-rk be-rk-fixed">' + esc(k.title) + ": " + esc(k.value) + "</span>";
         return '<span class="be-rk"><b>' + k.ring + "</b>" + esc(k.title) + "</span>";
       }).join("") + "</div>");
     }
     if (m.mode === "drilldown") {
-      h.push('<div class="be-chips">' + m.root.children.slice(0, 40).map(function (c) {
+      h.push('<div class="be-chips">' + firstVisibleLevel(m).slice(0, 40).map(function (c) {
         return '<span class="be-chip" data-id="' + c.id + '"><i class="be-sw" style="background:' + c.color + '"></i>' + esc(c.name) + "</span>";
       }).join("") + "</div>");
     }
@@ -739,7 +777,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     var W = Math.max(20, st.root.clientWidth);
     var H = Math.max(20, st.root.clientHeight -
       (o.showLegend ? st.legendEl.offsetHeight : 0) - st.noteEl.offsetHeight);
-    var geom = computeGeometry(W, H, nDims, o);
+    var geom = computeGeometry(W, H, model.visibleDims.length, o);
     layoutModel(model, geom, o);
 
     st.svg.setAttribute("viewBox", "0 0 " + W + " " + H);

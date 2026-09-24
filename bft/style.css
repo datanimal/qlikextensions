@@ -147,3 +147,4 @@
   letter-spacing: 0.02em;
   opacity: 0.85;
 }
+.by-rk-fixed { opacity: 0.85; font-style: italic; text-transform: none; letter-spacing: 0.03em; }
