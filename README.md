@@ -47,5 +47,11 @@ measure.
 mock data with a stubbed selection API, so you can work on them without a Qlik
 server. See [`dev-preview/README.md`](dev-preview/README.md).
 
-After changing an extension, rebuild its zip from the extension folder so the
-download stays in step with the source.
+After changing an extension, repackage it with the builder in this folder,
+which writes spec-compliant zip entries and refuses to emit a broken archive:
+
+    powershell -ExecutionPolicy Bypass -File build-zip.ps1 sunburst
+
+Run it with no argument to rebuild every extension. Do not use Compress-Archive
+directly: on Windows PowerShell it writes backslash separators into the zip,
+which violates the ZIP spec and can break import.
