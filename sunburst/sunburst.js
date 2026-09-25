@@ -141,6 +141,19 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     if (maxChars < 3) return "";
     return str.slice(0, maxChars - 1).replace(/\s+$/, "") + "…";
   }
+  /* SVGElement.classList is missing in older browsers and the two-argument
+   * form of classList.toggle() is not universal, so set classes by hand.
+   * Works the same on HTML and SVG elements everywhere. */
+  function hasCls(el, c) {
+    return (" " + (el.getAttribute("class") || "") + " ").indexOf(" " + c + " ") >= 0;
+  }
+  function setCls(el, c, on) {
+    var cur = (el.getAttribute("class") || "").split(/\s+/), out = [], i;
+    for (i = 0; i < cur.length; i++) if (cur[i] && cur[i] !== c) out.push(cur[i]);
+    if (on) out.push(c);
+    el.setAttribute("class", out.join(" "));
+  }
+
   function inEditMode() {
     try {
       return !!(qlik && qlik.navigation && qlik.navigation.getMode &&
@@ -551,7 +564,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
       if (!n) continue;
       st.segEls[n.id] = el;
       var faded = n.state === "X" || (selDims[n.dim] && n.state !== "S");
-      el.classList.toggle("sb-faded", !!faded);
+      setCls(el, "sb-faded", !!faded);
       if (n.state === "S") sel.push('<path d="' + el.getAttribute("d") + '"/>');
     }
     var g = st.svg.querySelector(".sb-selg");
@@ -623,17 +636,17 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     st.hover = node;
     var id;
     if (!node) {
-      svg.classList.remove("sb-hovering");
-      for (id in st.segEls) st.segEls[id].classList.remove("sb-lit");
+      setCls(svg, "sb-hovering", false);
+      for (id in st.segEls) setCls(st.segEls[id], "sb-lit", false);
       hideTip(st);
       updateCenter(st, null);
       return;
     }
-    svg.classList.add("sb-hovering");
+    setCls(svg, "sb-hovering", true);
     var lit = {}, a = node;
     while (a && a.depth > 0) { lit[a.id] = true; a = a.parent; }
     (function rec(n) { n.children.forEach(function (c) { lit[c.id] = true; rec(c); }); })(node);
-    for (id in st.segEls) st.segEls[id].classList.toggle("sb-lit", !!lit[id]);
+    for (id in st.segEls) setCls(st.segEls[id], "sb-lit", !!lit[id]);
     updateCenter(st, node);
     showTip(st, node, evt);
   }
@@ -860,7 +873,7 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
 
   function ensureDom(el, st) {
     var root = el.firstElementChild;
-    if (!root || !root.classList.contains("sb-root")) {
+    if (!root || !hasCls(root, "sb-root")) {
       el.innerHTML = '<div class="sb-root">' +
         '<svg class="sb-svg" xmlns="http://www.w3.org/2000/svg"></svg>' +
         '<div class="sb-legend"></div>' +
@@ -940,8 +953,8 @@ define(["qlik", "text!./style.css", "./properties"], function (qlik, css, proper
     st.svg.setAttribute("viewBox", "0 0 " + W + " " + H);
     st.svg.setAttribute("width", W);
     st.svg.setAttribute("height", H);
-    st.svg.classList.remove("sb-hovering");
-    st.svg.classList.toggle("sb-spinnable", !!o.spin);
+    setCls(st.svg, "sb-hovering", false);
+    setCls(st.svg, "sb-spinnable", !!o.spin);
     if (!o.spin) { stopCoast(st); st.spin = 0; }
     st.svg.innerHTML = buildSvg(st, W, H, geom);
     collectLabels(st);

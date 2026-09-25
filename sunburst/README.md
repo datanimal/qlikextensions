@@ -31,12 +31,31 @@ are untouched.
    Windows: QMC › Extensions › Import.
 3. Add **Sunburst** to a sheet with 1–6 dimensions and 1 measure.
 
-## Requirements
+## Requirements and compatibility
 
-Qlik Sense 3.0 or newer, on Qlik Cloud or Qlik Sense Enterprise, in a current
-browser. Sunburst is plain JavaScript with no build step and no external
-libraries, so nothing is fetched at runtime and it works on a tenant with no
-internet access. Touch and mouse are both supported.
+Runs unchanged on **Qlik Sense Enterprise on Windows** and on **Qlik Cloud**.
+There is no separate build for either; the same zip is used for both.
+
+- Qlik Sense 3.0 or newer.
+- Built on the classic extension API that QSEoW ships natively: RequireJS with
+  the `text!` plugin, a `paint()` entry point, and `backendApi.selectValues()`
+  for selections. Nothing Qlik-Cloud-only is used.
+- No build step, no bundler, no external libraries. Nothing is fetched at
+  runtime, so it works on an air-gapped or proxy-restricted server.
+- No ES6 syntax, and no browser API newer than what Qlik itself requires.
+  Class changes are applied by attribute rather than through `classList`,
+  which is absent on SVG elements in some older browsers, and the stylesheet
+  avoids flex `gap` and `inset` so spacing survives on a locked-down
+  enterprise browser.
+- Mouse and touch are both supported, via pointer events with a mouse
+  fallback.
+
+On QSEoW, import the zip through **QMC › Extensions › Import**. The package is
+built with spec-compliant forward-slash paths, which matters because both
+`Compress-Archive` and `ZipFile::CreateFromDirectory` on Windows PowerShell
+write backslashes that some unzip implementations refuse. Use `build-zip.ps1`
+in the repository root if you repackage it yourself; it verifies the archive
+and discards a bad one.
 
 ## Data notes
 

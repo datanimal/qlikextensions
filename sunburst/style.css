@@ -36,7 +36,6 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 14px;
   padding: 4px 8px 6px;
   font-size: 12px;
   line-height: 16px;
@@ -44,9 +43,10 @@
 .sb-ringkey {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
   color: #595959;
 }
+.sb-legend > * { margin: 2px 14px 2px 0; }
+.sb-legend > *:last-child { margin-right: 0; }
 .sb-rk b {
   display: inline-block;
   min-width: 14px;
@@ -63,18 +63,18 @@
 .sb-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
 }
+.sb-rk, .sb-chip { margin: 2px 12px 2px 0; }
 .sb-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   cursor: pointer;
   white-space: nowrap;
 }
 .sb-chip:hover { text-decoration: underline; }
 .sb-sw {
   display: inline-block;
+  margin-right: 6px;
   width: 10px;
   height: 10px;
   border-radius: 2px;
@@ -118,12 +118,15 @@
 .sb-tip .t-row {
   display: flex;
   justify-content: space-between;
-  gap: 14px;
 }
+.sb-tip .t-row span:first-child { margin-right: 14px; }
 .sb-tip .t-row span:last-child { font-weight: 600; }
 .sb-empty {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
